@@ -3,20 +3,31 @@ import ProjectsSidebar from '../components/ProjectsSidebar'
 import SearchSidebar from '../components/SearchSidebar'
 import CreateProjectForm from '../components/CreateProjectForm'
 import { useApp } from '../context/AppContext'
+import { Box } from '@mui/material'
+import { Navigate } from 'react-router-dom'
 
 export default function DashboardView() {
   const { user } = useApp()
-  if (!user) return <p>Please log in</p>
+  if (!user) return <Navigate to="/" />
   return (
-    <div className="dashboard">
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar />
-      <div className="body">
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+        }}
+      >
         <ProjectsSidebar />
-        <main>
+        <Box
+          component="main"
+          sx={{ flex: 1, p: 2, display: 'flex', justifyContent: 'center' }}
+        >
           <CreateProjectForm />
-        </main>
+        </Box>
         <SearchSidebar />
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }

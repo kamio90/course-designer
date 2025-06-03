@@ -11,6 +11,8 @@ import {
   Button,
   Typography,
   Box,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
@@ -20,6 +22,8 @@ import { translations } from '../i18n'
 export default function SearchSidebar() {
   const { addProject, lang } = useApp()
   const t = translations[lang]
+  const theme = useTheme()
+  const isMdUp = useMediaQuery(theme.breakpoints.up('md'))
   const [query, setQuery] = useState('')
   const [projects, setProjects] = useState<Project[]>([])
   const [collapsed, setCollapsed] = useState(false)
@@ -32,7 +36,7 @@ export default function SearchSidebar() {
     p.location.toLowerCase().includes(query.toLowerCase()),
   )
 
-  const width = collapsed ? 40 : 240
+  const width = collapsed ? 56 : isMdUp ? 240 : '100%'
 
   return (
     <Paper

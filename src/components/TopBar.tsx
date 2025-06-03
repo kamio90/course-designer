@@ -50,7 +50,7 @@ export default function TopBar() {
           <MenuIcon />
         </IconButton>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Course Designer Online
+          {t.appName}
         </Typography>
         <Typography sx={{ mr: 2 }}>
           {user ? user.username || user.email : ''}

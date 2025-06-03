@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTheme, useMediaQuery } from '@mui/material'
 import { Link } from 'react-router-dom'
 import {
   Paper,
@@ -19,7 +20,9 @@ export default function ProjectsSidebar() {
   const { projects, deleteProject, lang } = useApp()
   const t = translations[lang]
   const [collapsed, setCollapsed] = useState(false)
-  const width = collapsed ? 40 : 240
+  const theme = useTheme()
+  const isMdUp = useMediaQuery(theme.breakpoints.up('md'))
+  const width = collapsed ? 56 : isMdUp ? 240 : '100%'
 
   return (
     <Paper component="aside" elevation={1} sx={{ width, flexShrink: 0, transition: 'width 0.3s', overflow: 'hidden' }}>
