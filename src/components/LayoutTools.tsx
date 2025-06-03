@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  Drawer,
+  Paper,
   IconButton,
   List,
   ListItem,
@@ -32,42 +32,42 @@ export default function LayoutTools({ onSave, canSave }: Props) {
     { key: 'gazebo', label: t.gazebo },
   ]
 
-  if (collapsed) {
-    return (
-      <Drawer variant="permanent" open={false} anchor="left">
-        <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
+  const width = collapsed ? 40 : 240
+
+  return (
+    <Paper component="aside" elevation={1} sx={{ width, flexShrink: 0, transition: 'width 0.3s', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1 }}>
+        {collapsed ? (
           <IconButton onClick={() => setCollapsed(false)} aria-label={t.expandSidebar}>
             <ChevronRightIcon />
           </IconButton>
-        </Box>
-      </Drawer>
-    )
-  }
-
-  return (
-    <Drawer variant="permanent" anchor="left" open>
-      <Box sx={{ width: 240 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1 }}>
-          <Typography variant="h6">{t.layoutTools}</Typography>
-          <IconButton onClick={() => setCollapsed(true)} aria-label={t.collapseSidebar}>
-            <ChevronLeftIcon />
-          </IconButton>
-        </Box>
-        <Button onClick={onSave} disabled={!canSave} fullWidth sx={{ mb: 1 }}>
-          {t.saveLayout}
-        </Button>
-        <List dense>
-          {items.map((item) => (
-            <ListItem
-              key={item.key}
-              draggable
-              onDragStart={(e) => e.dataTransfer.setData('text/plain', item.key)}
-            >
-              <ListItemText primary={item.label} />
-            </ListItem>
-          ))}
-        </List>
+        ) : (
+          <>
+            <Typography variant="h6">{t.layoutTools}</Typography>
+            <IconButton onClick={() => setCollapsed(true)} aria-label={t.collapseSidebar}>
+              <ChevronLeftIcon />
+            </IconButton>
+          </>
+        )}
       </Box>
-    </Drawer>
+      {!collapsed && (
+        <>
+          <Button onClick={onSave} disabled={!canSave} fullWidth sx={{ mb: 1 }}>
+            {t.saveLayout}
+          </Button>
+          <List dense>
+            {items.map((item) => (
+              <ListItem
+                key={item.key}
+                draggable
+                onDragStart={(e) => e.dataTransfer.setData('text/plain', item.key)}
+              >
+                <ListItemText primary={item.label} />
+              </ListItem>
+            ))}
+          </List>
+        </>
+      )}
+    </Paper>
   )
 }

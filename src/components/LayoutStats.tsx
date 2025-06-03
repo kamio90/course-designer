@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Point } from './LayoutCanvas'
 import {
-  Drawer,
+  Paper,
   IconButton,
   Typography,
   List,
@@ -45,27 +45,29 @@ export default function LayoutStats({ points, scale }: Props) {
     return { length, closed, area }
   }, [points])
 
-  if (collapsed) {
-    return (
-      <Drawer variant="permanent" anchor="right" open={false} PaperProps={{ sx: { width: 40 } }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
+  const width = collapsed ? 40 : 240
+
+  return (
+    <Paper
+      component="aside"
+      elevation={1}
+      sx={{ width, flexShrink: 0, transition: 'width 0.3s', overflow: 'hidden' }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1 }}>
+        {collapsed ? (
           <IconButton onClick={() => setCollapsed(false)} aria-label={t.expandSidebar}>
             <ChevronLeftIcon />
           </IconButton>
-        </Box>
-      </Drawer>
-    )
-  }
-
-  return (
-    <Drawer variant="permanent" anchor="right" open>
-      <Box sx={{ width: 240 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1 }}>
-          <Typography variant="h6">{t.layoutStats}</Typography>
-          <IconButton onClick={() => setCollapsed(true)} aria-label={t.collapseSidebar}>
-            <ChevronRightIcon />
-          </IconButton>
-        </Box>
+        ) : (
+          <>
+            <Typography variant="h6">{t.layoutStats}</Typography>
+            <IconButton onClick={() => setCollapsed(true)} aria-label={t.collapseSidebar}>
+              <ChevronRightIcon />
+            </IconButton>
+          </>
+        )}
+      </Box>
+      {!collapsed && (
         <List dense>
           <ListItem>
             <ListItemText primary={`${t.totalPoints}: ${points.length}`} />
@@ -80,7 +82,7 @@ export default function LayoutStats({ points, scale }: Props) {
             <ListItemText primary={`${t.closedShape}: ${stats.closed ? 'Yes' : 'No'}`} />
           </ListItem>
         </List>
-      </Box>
-    </Drawer>
+      )}
+    </Paper>
   )
 }

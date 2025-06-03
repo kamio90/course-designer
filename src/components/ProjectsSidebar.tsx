@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Drawer,
+  Paper,
   List,
   ListItem,
   ListItemText,
@@ -19,37 +19,32 @@ export default function ProjectsSidebar() {
   const { projects, deleteProject, lang } = useApp()
   const t = translations[lang]
   const [collapsed, setCollapsed] = useState(false)
-  if (collapsed) {
-    return (
-      <Drawer variant="permanent" open={false} anchor="left">
-        <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
+  const width = collapsed ? 40 : 240
+
+  return (
+    <Paper component="aside" elevation={1} sx={{ width, flexShrink: 0, transition: 'width 0.3s', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1 }}>
+        {collapsed ? (
           <IconButton onClick={() => setCollapsed(false)} aria-label={t.expandSidebar ?? 'Expand sidebar'}>
             <ChevronRightIcon />
           </IconButton>
-        </Box>
-      </Drawer>
-    )
-  }
-  return (
-    <Drawer variant="permanent" open anchor="left">
-      <Box sx={{ width: 240 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1 }}>
-          <Typography variant="h6">{t.myProjects}</Typography>
-          <IconButton onClick={() => setCollapsed(true)} aria-label={t.collapseSidebar ?? 'Collapse sidebar'}>
-            <ChevronLeftIcon />
-          </IconButton>
-        </Box>
+        ) : (
+          <>
+            <Typography variant="h6">{t.myProjects}</Typography>
+            <IconButton onClick={() => setCollapsed(true)} aria-label={t.collapseSidebar ?? 'Collapse sidebar'}>
+              <ChevronLeftIcon />
+            </IconButton>
+          </>
+        )}
+      </Box>
+      {!collapsed && (
         <List dense>
           {projects.length === 0 && <ListItemText primary={t.noProjects} />}
           {projects.map((p) => (
             <ListItem
               key={p.id}
               secondaryAction={
-                <IconButton
-                  edge="end"
-                  aria-label={t.delete}
-                  onClick={() => deleteProject(p.id)}
-                >
+                <IconButton edge="end" aria-label={t.delete} onClick={() => deleteProject(p.id)}>
                   <DeleteIcon />
                 </IconButton>
               }
@@ -61,7 +56,7 @@ export default function ProjectsSidebar() {
             </ListItem>
           ))}
         </List>
-      </Box>
-    </Drawer>
+      )}
+    </Paper>
   )
 }
