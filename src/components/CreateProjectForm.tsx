@@ -1,4 +1,11 @@
 import { useState } from 'react'
+import {
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  Box,
+} from '@mui/material'
 import { translations } from '../i18n'
 import { useApp } from '../context/AppContext'
 
@@ -16,24 +23,38 @@ export default function CreateProjectForm() {
     setLevel('CSI1*')
   }
   return (
-    <form onSubmit={handleSubmit} aria-label="create project form">
-      <label>
-        {t.title}
-        <input value={title} onChange={(e) => setTitle(e.target.value)} required />
-      </label>
-      <label>
-        {t.location}
-        <input value={location} onChange={(e) => setLocation(e.target.value)} required />
-      </label>
-      <label>
-        {t.competitionLevel}
-        <select value={level} onChange={(e) => setLevel(e.target.value)}>
-          <option value="CSI1*">CSI1*</option>
-          <option value="national">National</option>
-        </select>
-      </label>
-      <button type="submit">{t.createProject}</button>
-      <button type="button" onClick={() => alert('Import template soon')}>{t.importTemplate ?? 'Import from template'}</button>
-    </form>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      aria-label="create project form"
+      sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 400 }}
+    >
+      <TextField
+        label={t.title}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        required
+      />
+      <TextField
+        label={t.location}
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        required
+      />
+      <Select
+        value={level}
+        label={t.competitionLevel}
+        onChange={(e) => setLevel(e.target.value)}
+      >
+        <MenuItem value="CSI1*">CSI1*</MenuItem>
+        <MenuItem value="national">National</MenuItem>
+      </Select>
+      <Button type="submit" variant="contained">
+        {t.createProject}
+      </Button>
+      <Button type="button" onClick={() => alert('Import template soon')} variant="outlined">
+        {t.importTemplate ?? 'Import from template'}
+      </Button>
+    </Box>
   )
 }

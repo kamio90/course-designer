@@ -1,5 +1,17 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton,
+  Typography,
+  Box,
+} from '@mui/material'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import DeleteIcon from '@mui/icons-material/Delete'
 import { useApp } from '../context/AppContext'
 import { translations } from '../i18n'
 
@@ -9,31 +21,40 @@ export default function ProjectsSidebar() {
   const [collapsed, setCollapsed] = useState(false)
   if (collapsed) {
     return (
-      <aside className="sidebar left" aria-label="projects sidebar" data-collapsed>
-        <button onClick={() => setCollapsed(false)} aria-label={t.expandSidebar ?? 'Expand sidebar'}>
-          ▶
-        </button>
-      </aside>
+      <Drawer variant="permanent" open={false} anchor="left">
+        <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
+          <IconButton onClick={() => setCollapsed(false)} aria-label={t.expandSidebar ?? 'Expand sidebar'}>
+            <ChevronRightIcon />
+          </IconButton>
+        </Box>
+      </Drawer>
     )
   }
   return (
-    <aside className="sidebar left" aria-label="projects sidebar">
-      <div className="sidebar-header">
-        <h2>{t.myProjects}</h2>
-        <button onClick={() => setCollapsed(true)} aria-label={t.collapseSidebar ?? 'Collapse sidebar'}>
-          ◀
-        </button>
-      </div>
-      <ul>
-        {projects.length === 0 && <li>{t.noProjects}</li>}
-        {projects.map((p) => (
-          <li key={p.id}>
-            <button onClick={() => deleteProject(p.id)} aria-label={t.delete}>✕</button>{' '}
-            <Link to={`/project/${p.id}`}>{p.title}</Link>{' '}
-            – {p.location} ({p.level}) [{new Date(p.createdAt).toLocaleDateString()}]
-          </li>
-        ))}
-      </ul>
-    </aside>
+    <Drawer variant="permanent" open anchor="left">
+      <Box sx={{ width: 240 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1 }}>
+          <Typography variant="h6">{t.myProjects}</Typography>
+          <IconButton onClick={() => setCollapsed(true)} aria-label={t.collapseSidebar ?? 'Collapse sidebar'}>
+            <ChevronLeftIcon />
+          </IconButton>
+        </Box>
+        <List dense>
+          {projects.length === 0 && <ListItemText primary={t.noProjects} />}
+          {projects.map((p) => (
+            <ListItem key={p.id} secondaryAction={
+              <IconButton edge="end" aria-label={t.delete} onClick={() => deleteProject(p.id)}>
+                <DeleteIcon />
+              </IconButton>
+            }>
+              <ListItemText
+                primary={<Link to={`/project/${p.id}`}>{p.title}</Link>}
+                secondary={`${p.location} (${p.level}) [${new Date(p.createdAt).toLocaleDateString()}]`}
+              />
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </Drawer>
   )
 }

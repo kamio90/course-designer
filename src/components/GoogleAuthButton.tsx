@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { Button } from '@mui/material'
 
 interface Props {
   onAuth: () => void
@@ -6,9 +7,9 @@ interface Props {
 
 const GoogleAuthButton: FC<Props> = ({ onAuth }) => {
   return (
-    <button type="button" onClick={onAuth} aria-label="google auth" className="google-btn">
+    <Button type="button" onClick={onAuth} aria-label="google auth" variant="outlined" sx={{ mt: 2 }} fullWidth>
       Continue with Google (mock)
-    </button>
+    </Button>
   )
 }
 

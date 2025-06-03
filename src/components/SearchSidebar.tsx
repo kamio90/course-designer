@@ -1,6 +1,19 @@
 import { useEffect, useState } from 'react'
 import { fetchPublicProjects } from '../api/fakeApi'
 import type { Project } from '../api/fakeApi'
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  TextField,
+  IconButton,
+  Button,
+  Typography,
+  Box,
+} from '@mui/material'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { useApp } from '../context/AppContext'
 import { translations } from '../i18n'
 
@@ -21,32 +34,44 @@ export default function SearchSidebar() {
 
   if (collapsed) {
     return (
-      <aside className="sidebar right" aria-label="search sidebar" data-collapsed>
-        <button onClick={() => setCollapsed(false)} aria-label={t.expandSidebar ?? 'Expand sidebar'}>◀</button>
-      </aside>
+      <Drawer variant="permanent" anchor="right" open={false}
+        PaperProps={{ sx: { width: 40 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
+          <IconButton onClick={() => setCollapsed(false)} aria-label={t.expandSidebar ?? 'Expand sidebar'}>
+            <ChevronLeftIcon />
+          </IconButton>
+        </Box>
+      </Drawer>
     )
   }
 
   return (
-    <aside className="sidebar right" aria-label="search sidebar">
-      <div className="sidebar-header">
-        <h2>{t.searchProjects}</h2>
-        <button onClick={() => setCollapsed(true)} aria-label={t.collapseSidebar ?? 'Collapse sidebar'}>▶</button>
-      </div>
-      <input
-        type="search"
-        placeholder={t.searchPlaceholder}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
-      <ul>
-        {filtered.map((p) => (
-          <li key={p.id}>
-            {p.title} – {p.location}{' '}
-            <button onClick={() => addProject(p)}>{t.add}</button>
-          </li>
-        ))}
-      </ul>
-    </aside>
+    <Drawer variant="permanent" anchor="right" open>
+      <Box sx={{ width: 240 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1 }}>
+          <Typography variant="h6">{t.searchProjects}</Typography>
+          <IconButton onClick={() => setCollapsed(true)} aria-label={t.collapseSidebar ?? 'Collapse sidebar'}>
+            <ChevronRightIcon />
+          </IconButton>
+        </Box>
+        <TextField
+          type="search"
+          placeholder={t.searchPlaceholder}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          size="small"
+          fullWidth
+          sx={{ mb: 1 }}
+        />
+        <List dense>
+          {filtered.map((p) => (
+            <ListItem key={p.id}>
+              <ListItemText primary={`${p.title} – ${p.location}`} />
+              <Button onClick={() => addProject(p)} size="small">{t.add}</Button>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </Drawer>
   )
 }
