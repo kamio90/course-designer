@@ -42,11 +42,9 @@ main {
   flex: 1;
   padding: 1rem;
   width: 100%;
-}
-.toggle-buttons {
-  margin-top: 1rem;
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
 }
 .topbar {
   display: flex;

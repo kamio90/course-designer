@@ -52,7 +52,9 @@ export default function TopBar() {
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           Course Designer Online
         </Typography>
-        <Typography sx={{ mr: 2 }}>{user?.username}</Typography>
+        <Typography sx={{ mr: 2 }}>
+          {user ? user.username || user.email : ''}
+        </Typography>
         <Select
           value={lang}
           onChange={(e) => switchLang(e.target.value as 'en' | 'pl')}

@@ -42,14 +42,21 @@ export default function ProjectsSidebar() {
         <List dense>
           {projects.length === 0 && <ListItemText primary={t.noProjects} />}
           {projects.map((p) => (
-            <ListItem key={p.id} secondaryAction={
-              <IconButton edge="end" aria-label={t.delete} onClick={() => deleteProject(p.id)}>
-                <DeleteIcon />
-              </IconButton>
-            }>
+            <ListItem
+              key={p.id}
+              secondaryAction={
+                <IconButton
+                  edge="end"
+                  aria-label={t.delete}
+                  onClick={() => deleteProject(p.id)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              }
+            >
               <ListItemText
                 primary={<Link to={`/project/${p.id}`}>{p.title}</Link>}
-                secondary={`${p.location} (${p.level}) [${new Date(p.createdAt).toLocaleDateString()}]`}
+                secondary={`${p.location} · ${p.level} · ${t.courses}: ${p.courses} · ${new Date(p.createdAt).toLocaleDateString()}`}
               />
             </ListItem>
           ))}
