@@ -91,3 +91,12 @@ main {
   background: white;
   padding: 1rem;
 }
+
+.context-menu {
+  position: fixed;
+  list-style: none;
+  padding: 4px;
+  margin: 0;
+  background: white;
+  border: 1px solid #ccc;
+}

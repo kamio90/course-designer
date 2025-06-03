@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import DesignTopBar from '../components/DesignTopBar'
-import LayoutCanvas, { type Point } from '../components/LayoutCanvas'
+import LayoutCanvas, { type Point, type ElementItem } from '../components/LayoutCanvas'
 import LayoutTools from '../components/LayoutTools'
 import LayoutStats from '../components/LayoutStats'
 import { useApp } from '../context/AppContext'
@@ -11,8 +11,11 @@ export default function DesignView() {
   const { projects } = useApp()
   const project = projects.find((p) => p.id === projectId)
   const [points, setPoints] = useState<Point[]>([])
+  const [elements, setElements] = useState<ElementItem[]>([])
   const [showGrid, setShowGrid] = useState(true)
   const [scale, setScale] = useState(10)
+  const [snap, setSnap] = useState(false)
+  const [autoStraight, setAutoStraight] = useState(false)
 
   if (!project) return <p>Project not found</p>
 
@@ -28,12 +31,25 @@ export default function DesignView() {
         toggleGrid={() => setShowGrid((g) => !g)}
         scale={scale}
         toggleScale={toggleScale}
+        snap={snap}
+        toggleSnap={() => setSnap((s) => !s)}
+        autoStraight={autoStraight}
+        toggleAuto={() => setAutoStraight((a) => !a)}
       />
       <div className="body">
         <LayoutTools onSave={() => alert('saved')} canSave={closed} />
         <main>
           <h2>{project.title}</h2>
-          <LayoutCanvas points={points} setPoints={setPoints} showGrid={showGrid} scale={scale} />
+          <LayoutCanvas
+            points={points}
+            setPoints={setPoints}
+            showGrid={showGrid}
+            scale={scale}
+            snap={snap}
+            autoStraight={autoStraight}
+            elements={elements}
+            setElements={setElements}
+          />
         </main>
         <LayoutStats points={points} scale={scale} />
       </div>
