@@ -45,6 +45,9 @@ export const translations = {
     loginTitle: 'Login to Course Designer',
     googleSignIn: 'Sign in with Google',
     googleMock: 'Google login mocked',
+    registerTitle: 'Create Your Account',
+    googleRegister: 'Register with Google',
+    googleRegisterMock: 'Google register mocked',
   },
   pl: {
     login: 'Zaloguj',
@@ -92,6 +95,9 @@ export const translations = {
     loginTitle: 'Zaloguj do Course Designer',
     googleSignIn: 'Zaloguj przez Google',
     googleMock: 'Logowanie Google - symulacja',
+    registerTitle: 'Utwórz konto',
+    googleRegister: 'Zarejestruj przez Google',
+    googleRegisterMock: 'Rejestracja Google - symulacja',
   },
 } as const
 
