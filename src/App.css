@@ -41,6 +41,7 @@ body[data-theme='light'] {
 main {
   flex: 1;
   padding: 1rem;
+  width: 100%;
 }
 .toggle-buttons {
   margin-top: 1rem;
@@ -63,7 +64,8 @@ main {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-width: 300px;
+  max-width: 400px;
+  width: 100%;
   margin: 2rem auto;
 }
 

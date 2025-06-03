@@ -57,12 +57,13 @@ export default function LayoutCanvas({ points, setPoints, showGrid, scale }: Pro
   return (
     <svg
       ref={svgRef}
-      width={800}
-      height={600}
+      viewBox="0 0 800 600"
+      width="100%"
+      height="600px"
       onClick={handleClick}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      style={{ border: '1px solid #ccc', touchAction: 'none' }}
+      style={{ border: '1px solid #ccc', touchAction: 'none', maxWidth: '100%' }}
     >
       {gridLines}
       {points.length > 1 && <polyline points={polyPoints} fill="none" stroke="blue" />}

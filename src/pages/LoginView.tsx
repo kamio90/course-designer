@@ -36,12 +36,13 @@ export default function LoginView() {
   }
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      aria-label="login form"
-      className="auth-form"
-    >
+    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        aria-label="login form"
+        className="auth-form"
+      >
       <TextField
         label={t.email}
         type="email"
@@ -81,12 +82,13 @@ export default function LoginView() {
       <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
         {t.login}
       </Button>
-      <GoogleAuthButton
-        onAuth={() => {
-          login({ email: 'google@example.com', username: 'googleUser' })
-          navigate('/dashboard')
-        }}
-      />
+        <GoogleAuthButton
+          onAuth={() => {
+            login({ email: 'google@example.com', username: 'googleUser' })
+            navigate('/dashboard')
+          }}
+        />
+      </Box>
     </Box>
   )
 }
