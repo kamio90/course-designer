@@ -42,6 +42,9 @@ export const translations = {
     closedShape: 'Closed shape',
     snap: 'Snap to grid',
     straighten: 'Auto-straighten',
+    loginTitle: 'Login to Course Designer',
+    googleSignIn: 'Sign in with Google',
+    googleMock: 'Google login mocked',
   },
   pl: {
     login: 'Zaloguj',
@@ -86,6 +89,9 @@ export const translations = {
     closedShape: 'Zamknięty kształt',
     snap: 'Przyciąganie do siatki',
     straighten: 'Prostowanie linii',
+    loginTitle: 'Zaloguj do Course Designer',
+    googleSignIn: 'Zaloguj przez Google',
+    googleMock: 'Logowanie Google - symulacja',
   },
 } as const
 

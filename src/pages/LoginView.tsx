@@ -1,94 +1,107 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  Container,
+  Paper,
+  Stack,
+  Typography,
   TextField,
   Button,
   IconButton,
   InputAdornment,
-  Alert,
-  Box,
 } from '@mui/material'
 import { Visibility, VisibilityOff } from '@mui/icons-material'
+import { useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import * as yup from 'yup'
 import { login as apiLogin } from '../api/fakeApi'
 import { useApp } from '../context/AppContext'
-import { translations } from '../i18n'
 import GoogleAuthButton from '../components/GoogleAuthButton'
+import { translations } from '../i18n'
+
+interface FormInputs {
+  username: string
+  password: string
+}
 
 export default function LoginView() {
   const { login, lang } = useApp()
   const navigate = useNavigate()
   const t = translations[lang]
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [showPwd, setShowPwd] = useState(false)
-  const [error, setError] = useState('')
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const schema = yup.object({
+    username: yup.string().required(),
+    password: yup.string().min(6).required(),
+  })
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormInputs>({
+    resolver: yupResolver(schema),
+    mode: 'onBlur',
+  })
+
+  const onSubmit = async (data: FormInputs) => {
+    await new Promise((res) => setTimeout(res, 1000))
     try {
-      const user = await apiLogin({ email, password })
-      login(user)
+      await apiLogin({ email: data.username, password: data.password })
+      alert('Logged in')
+      login({ email: data.username, username: data.username })
       navigate('/dashboard')
     } catch (err) {
-      setError((err as Error).message)
+      alert((err as Error).message)
     }
   }
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
-        aria-label="login form"
-        className="auth-form"
-      >
-      <TextField
-        label={t.email}
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        fullWidth
-        margin="normal"
-      />
-      <TextField
-        label={t.password}
-        type={showPwd ? 'text' : 'password'}
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        fullWidth
-        margin="normal"
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton
-                onClick={() => setShowPwd((s) => !s)}
-                aria-label={showPwd ? t.hidePassword : t.showPassword}
-                edge="end"
-              >
-                {showPwd ? <VisibilityOff /> : <Visibility />}
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
-      />
-      {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {error}
-        </Alert>
-      )}
-      <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-        {t.login}
-      </Button>
-        <GoogleAuthButton
-          onAuth={() => {
-            login({ email: 'google@example.com', username: 'googleUser' })
-            navigate('/dashboard')
-          }}
-        />
-      </Box>
-    </Box>
+    <Container maxWidth="sm" sx={{ mt: 8 }}>
+      <Paper sx={{ p: 4 }} component="form" onSubmit={handleSubmit(onSubmit)}>
+        <Stack spacing={2}>
+          <Typography variant="h4" component="h1" textAlign="center">
+            {t.loginTitle}
+          </Typography>
+          <TextField
+            label={t.username}
+            {...register('username')}
+            error={!!errors.username}
+            helperText={errors.username?.message}
+            autoFocus
+          />
+          <TextField
+            label={t.password}
+            type={showPwd ? 'text' : 'password'}
+            {...register('password')}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPwd((s) => !s)}
+                    aria-label={showPwd ? t.hidePassword : t.showPassword}
+                    edge="end"
+                  >
+                    {showPwd ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button type="submit" variant="contained" disabled={isSubmitting}>
+            {t.login}
+          </Button>
+          <GoogleAuthButton
+            onAuth={() => {
+              alert(t.googleMock)
+            }}
+          >
+            {t.googleSignIn}
+          </GoogleAuthButton>
+        </Stack>
+      </Paper>
+    </Container>
   )
 }

@@ -110,7 +110,9 @@ export default function RegisterView() {
             login({ email: 'google@example.com', username: 'googleUser' })
             navigate('/dashboard')
           }}
-        />
+        >
+          {t.googleSignIn}
+        </GoogleAuthButton>
       </Box>
     </Box>
   )

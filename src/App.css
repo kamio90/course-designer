@@ -58,18 +58,6 @@ main {
   gap: 0.5rem;
 }
 
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-width: 400px;
-  width: 100%;
-  margin: 2rem auto;
-}
-
-.google-btn {
-  margin-top: 0.5rem;
-}
 
 .design-topbar {
   background: #b0b0b0;
