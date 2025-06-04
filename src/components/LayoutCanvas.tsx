@@ -950,7 +950,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
   }, [])
 
   useEffect(() => {
-    const handle = requestAnimationFrame(() => {
+    const resize = () => {
       const canvas = canvasRef.current!
       const ctx = canvas.getContext('2d')!
       const dpr = window.devicePixelRatio || 1
@@ -959,6 +959,12 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
         canvas.height = 1500 * dpr
         ctx.scale(dpr, dpr)
       }
+    }
+    resize()
+    window.addEventListener('resize', resize)
+    const handle = requestAnimationFrame(() => {
+      const canvas = canvasRef.current!
+      const ctx = canvas.getContext('2d')!
       const styles = getComputedStyle(document.body)
       const highlight = styles.getPropertyValue('--highlight') || '#1fa870'
       ctx.setTransform(1, 0, 0, 1, 0, 0)
@@ -1125,7 +1131,10 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       ctx.fillText(len.toFixed(2) + 'm', mx + 4, my - 4)
     }
     })
-    return () => cancelAnimationFrame(handle)
+    return () => {
+      cancelAnimationFrame(handle)
+      window.removeEventListener('resize', resize)
+    }
   }, [points, showGrid, scale, gridSpacing, elements, offset, zoom, curves, dragIndex, dragPreview, measureStart, measureEnd, measureMode])
 
   useEffect(() => {

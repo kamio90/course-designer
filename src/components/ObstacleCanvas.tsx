@@ -339,7 +339,7 @@ export default function ObstacleCanvas({
   }, [])
 
   useEffect(() => {
-    const handle = requestAnimationFrame(() => {
+    const resize = () => {
       const canvas = canvasRef.current!
       const ctx = canvas.getContext('2d')!
       const dpr = window.devicePixelRatio || 1
@@ -348,6 +348,12 @@ export default function ObstacleCanvas({
         canvas.height = 1500 * dpr
         ctx.scale(dpr, dpr)
       }
+    }
+    resize()
+    window.addEventListener('resize', resize)
+    const handle = requestAnimationFrame(() => {
+      const canvas = canvasRef.current!
+      const ctx = canvas.getContext('2d')!
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.setTransform(zoom, 0, 0, zoom, offset.x, offset.y)
@@ -413,7 +419,10 @@ export default function ObstacleCanvas({
       ctx.fillText(len.toFixed(2) + 'm', (a.x + b.x) / 2, (a.y + b.y) / 2)
     })
     })
-    return () => cancelAnimationFrame(handle)
+    return () => {
+      cancelAnimationFrame(handle)
+      window.removeEventListener('resize', resize)
+    }
   }, [layout, obstacles, connections, showGrid, offset, zoom, scale])
 
   return (

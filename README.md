@@ -52,3 +52,12 @@ export default tseslint.config({
   },
 })
 ```
+
+## Testing
+
+Run `npm run test:e2e` to execute Playwright tests across Chrome, Firefox, and Safari.
+
+
+The canvas automatically scales to the device pixel ratio for crisp rendering on high-DPI displays.
+
+See `QA_NOTES.md` for browser-specific notes and limitations.
