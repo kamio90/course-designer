@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+  ForwardedRef,
+} from 'react'
 import {
   Menu,
   MenuItem,
@@ -68,10 +75,10 @@ export interface LayoutCanvasHandle {
 
 const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas(
   {
-  points,
-  setPoints,
-  showGrid,
-  scale,
+    points,
+    setPoints,
+    showGrid,
+    scale,
   gridSpacing,
   snap,
   autoStraight,
@@ -80,10 +87,12 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
   measureMode,
   onMeasureToggle,
   onUndo,
-  onRedo,
-  activeTool,
-  onToolUsed,
-}: Props) {
+    onRedo,
+    activeTool,
+    onToolUsed,
+  }: Props,
+  ref: ForwardedRef<LayoutCanvasHandle>,
+) {
   const { lang, shortcuts } = useApp()
   const t = translations[lang]
   const canvasRef = useRef<HTMLCanvasElement>(null)
