@@ -4,6 +4,7 @@ import DesignTopBar from '../components/DesignTopBar'
 import LayoutCanvas, { type Point, type ElementItem } from '../components/LayoutCanvas'
 import LayoutTools from '../components/LayoutTools'
 import LayoutStats from '../components/LayoutStats'
+import HistoryPanel from '../components/HistoryPanel'
 import { useApp } from '../context/AppContext'
 import { translations } from '../i18n'
 import useUndoable from '../hooks/useUndoable'
@@ -179,6 +180,7 @@ export default function DesignView() {
           />
         </main>
         <LayoutStats points={points} scale={scale} elements={elements} />
+        <HistoryPanel history={pointsHistory.history()} jump={pointsHistory.go} />
       </div>
     </div>
   )

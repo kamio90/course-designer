@@ -36,10 +36,25 @@ export default function useUndoable<T>(initial: T) {
     setState(value)
   }
 
+  const history = () => {
+    return [...past.current, state, ...future.current.slice().reverse()]
+  }
+
+  const go = (index: number) => {
+    const all = history()
+    if (index < 0 || index >= all.length) return
+    const target = all[index]
+    past.current = all.slice(0, index)
+    future.current = all.slice(index + 1).reverse()
+    setState(target)
+  }
+
   return {
     state,
     set,
     replace,
+    history,
+    go,
     undo,
     redo,
     canUndo: past.current.length > 0,
