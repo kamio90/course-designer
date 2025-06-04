@@ -527,12 +527,54 @@ export default function LayoutCanvas({
       ctx.fillText(len.toFixed(2) + 'm', (p1.x + p2.x) / 2, (p1.y + p2.y) / 2)
     }
 
-    ctx.fillStyle = 'orange'
     elements.forEach((el, idx) => {
       ctx.save()
       ctx.translate(el.x, el.y)
       ctx.rotate((el.rotation * Math.PI) / 180)
-      ctx.fillRect(-10, -10, 20, 20)
+      switch (el.type) {
+        case 'water':
+          ctx.fillStyle = '#64b5f6'
+          ctx.beginPath()
+          ctx.ellipse(0, 0, 15, 10, 0, 0, Math.PI * 2)
+          ctx.fill()
+          break
+        case 'grass':
+          ctx.fillStyle = '#81c784'
+          ctx.fillRect(-20, -10, 40, 20)
+          break
+        case 'entrance':
+          ctx.fillStyle = '#ffb74d'
+          ctx.beginPath()
+          ctx.moveTo(-10, -10)
+          ctx.lineTo(10, 0)
+          ctx.lineTo(-10, 10)
+          ctx.closePath()
+          ctx.fill()
+          break
+        case 'exit':
+          ctx.fillStyle = '#f06292'
+          ctx.beginPath()
+          ctx.moveTo(10, -10)
+          ctx.lineTo(-10, 0)
+          ctx.lineTo(10, 10)
+          ctx.closePath()
+          ctx.fill()
+          break
+        case 'gazebo':
+          ctx.fillStyle = '#8d6e63'
+          ctx.fillRect(-12, -12, 24, 12)
+          ctx.fillStyle = '#bcaaa4'
+          ctx.beginPath()
+          ctx.moveTo(-14, -12)
+          ctx.lineTo(0, -20)
+          ctx.lineTo(14, -12)
+          ctx.closePath()
+          ctx.fill()
+          break
+        default:
+          ctx.fillStyle = 'orange'
+          ctx.fillRect(-10, -10, 20, 20)
+      }
       ctx.fillStyle = 'black'
       ctx.fillText(String(idx + 1), 12, 0)
       ctx.restore()

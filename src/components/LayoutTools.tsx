@@ -5,10 +5,16 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemIcon,
   Button,
   Typography,
   Box,
 } from '@mui/material'
+import WaterDropIcon from '@mui/icons-material/WaterDrop'
+import GrassIcon from '@mui/icons-material/Grass'
+import LoginIcon from '@mui/icons-material/Login'
+import LogoutIcon from '@mui/icons-material/Logout'
+import CottageIcon from '@mui/icons-material/Cottage'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { translations } from '../i18n'
@@ -25,11 +31,11 @@ export default function LayoutTools({ onSave, canSave }: Props) {
   const t = translations[lang]
 
   const items = [
-    { key: 'water', label: t.water },
-    { key: 'grass', label: t.grass },
-    { key: 'entrance', label: t.entrance },
-    { key: 'exit', label: t.exit },
-    { key: 'gazebo', label: t.gazebo },
+    { key: 'water', label: t.water, icon: <WaterDropIcon /> },
+    { key: 'grass', label: t.grass, icon: <GrassIcon /> },
+    { key: 'entrance', label: t.entrance, icon: <LoginIcon /> },
+    { key: 'exit', label: t.exit, icon: <LogoutIcon /> },
+    { key: 'gazebo', label: t.gazebo, icon: <CottageIcon /> },
   ]
 
   const width = collapsed ? 40 : 240
@@ -61,7 +67,9 @@ export default function LayoutTools({ onSave, canSave }: Props) {
                 key={item.key}
                 draggable
                 onDragStart={(e) => e.dataTransfer.setData('text/plain', item.key)}
+                button
               >
+                <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.label} />
               </ListItem>
             ))}
