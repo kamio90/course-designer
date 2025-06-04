@@ -108,9 +108,14 @@ export default function LayoutCanvas({
 
   useEffect(() => {
     const keyHandler = (ev: KeyboardEvent) => {
-      if (ev.key.toLowerCase() === 'f') {
+      const k = ev.key.toLowerCase()
+      if (k === 'f') {
         ev.preventDefault()
         centerView()
+      } else if (k === 'enter' && points.length >= 3 && !closed) {
+        ev.preventDefault()
+        setPoints([...points, { ...points[0] }])
+        setClosed(true)
       }
     }
     window.addEventListener('keydown', keyHandler)
