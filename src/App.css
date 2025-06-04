@@ -1,6 +1,8 @@
 body {
   background: var(--bg);
   color: var(--text);
+  --primary: #1565c0;
+  --highlight: #1fa870;
 }
 body[data-theme='light'] {
   --bg: #fff;
@@ -9,10 +11,14 @@ body[data-theme='light'] {
 body[data-theme='dark'] {
   --bg: #222;
   --text: #eee;
+  --primary: #90caf9;
+  --highlight: #81c784;
 }
 body[data-hc='true'] {
   --bg: #000;
   --text: #fff;
+  --primary: #ffab00;
+  --highlight: #ffff00;
 }
 .dashboard {
   display: flex;

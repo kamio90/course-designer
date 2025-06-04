@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useApp } from '../context/AppContext'
 import type { Point } from './LayoutCanvas'
 
 export interface Obstacle {
@@ -38,6 +39,7 @@ export default function ObstacleCanvas({
   connectMode,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { advancedGestures } = useApp()
   const [dragId, setDragId] = useState<string | null>(null)
   const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(null)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
@@ -78,7 +80,12 @@ export default function ObstacleCanvas({
       e.currentTarget.setPointerCapture(e.pointerId)
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
       const actionActive = dragId || resize
-      if (!actionActive && !panStart && pointers.current.size === 2) {
+      if (
+        advancedGestures &&
+        !actionActive &&
+        !panStart &&
+        pointers.current.size === 2
+      ) {
         const [a, b] = Array.from(pointers.current.values())
         pinch.current = {
           dist: Math.hypot(b.x - a.x, b.y - a.y),
@@ -137,6 +144,7 @@ export default function ObstacleCanvas({
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     }
     if (
+      advancedGestures &&
       pinch.current &&
       pointers.current.size === 2 &&
       actionPointer.current === null &&
@@ -273,11 +281,18 @@ export default function ObstacleCanvas({
   }, [dragId, obstacles])
 
   useEffect(() => {
-    const canvas = canvasRef.current!
-    const ctx = canvas.getContext('2d')!
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.setTransform(zoom, 0, 0, zoom, offset.x, offset.y)
+    const handle = requestAnimationFrame(() => {
+      const canvas = canvasRef.current!
+      const ctx = canvas.getContext('2d')!
+      const dpr = window.devicePixelRatio || 1
+      if (canvas.width !== 2000 * dpr) {
+        canvas.width = 2000 * dpr
+        canvas.height = 1500 * dpr
+        ctx.scale(dpr, dpr)
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.setTransform(zoom, 0, 0, zoom, offset.x, offset.y)
 
     if (showGrid) {
       ctx.strokeStyle = '#eee'
@@ -339,6 +354,8 @@ export default function ObstacleCanvas({
       const len = Math.hypot(a.x - b.x, a.y - b.y) / scale
       ctx.fillText(len.toFixed(2) + 'm', (a.x + b.x) / 2, (a.y + b.y) / 2)
     })
+    })
+    return () => cancelAnimationFrame(handle)
   }, [layout, obstacles, connections, showGrid, offset, zoom, scale])
 
   return (

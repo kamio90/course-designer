@@ -21,7 +21,15 @@ interface Props {
 }
 
 export default function PreferencesDialog({ open, onClose }: Props) {
-  const { lang, highContrast, toggleContrast, shortcuts, setShortcut } = useApp()
+  const {
+    lang,
+    highContrast,
+    toggleContrast,
+    advancedGestures,
+    toggleGestures,
+    shortcuts,
+    setShortcut,
+  } = useApp()
   const t = translations[lang]
   const [local, setLocal] = useState(shortcuts)
 
@@ -37,6 +45,10 @@ export default function PreferencesDialog({ open, onClose }: Props) {
         <FormControlLabel
           control={<Switch checked={highContrast} onChange={toggleContrast} />}
           label={t.highContrast}
+        />
+        <FormControlLabel
+          control={<Switch checked={advancedGestures} onChange={toggleGestures} />}
+          label={t.advancedGestures}
         />
         <List dense>
           {Object.entries(local).map(([action, key]) => (

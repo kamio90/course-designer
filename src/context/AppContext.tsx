@@ -10,6 +10,8 @@ interface AppContextProps {
   toggleTheme: () => void
   highContrast: boolean
   toggleContrast: () => void
+  advancedGestures: boolean
+  toggleGestures: () => void
   lang: 'en' | 'pl'
   switchLang: (lang: 'en' | 'pl') => void
   shortcuts: Record<string, string>
@@ -34,6 +36,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   )
   const [highContrast, setHighContrast] = useState<boolean>(() => {
     return localStorage.getItem('highContrast') === 'true'
+  })
+  const [advancedGestures, setAdvancedGestures] = useState<boolean>(() => {
+    return localStorage.getItem('advancedGestures') !== 'false'
   })
   const [shortcuts, setShortcuts] = useState<Record<string, string>>(() => {
     const raw = localStorage.getItem('shortcuts')
@@ -71,6 +76,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setHighContrast((c) => {
       const next = !c
       localStorage.setItem('highContrast', String(next))
+      return next
+    })
+  }
+  const toggleGestures = () => {
+    setAdvancedGestures((g) => {
+      const next = !g
+      localStorage.setItem('advancedGestures', String(next))
       return next
     })
   }
@@ -123,8 +135,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         theme,
         toggleTheme,
         highContrast,
-        toggleContrast,
-        lang,
+      toggleContrast,
+      advancedGestures,
+      toggleGestures,
+      lang,
         switchLang,
         shortcuts,
         setShortcut,

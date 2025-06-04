@@ -102,6 +102,7 @@ export const translations = {
     waterLarge: 'Large Water',
     preferences: 'Preferences',
     highContrast: 'High contrast mode',
+    advancedGestures: 'Enable advanced gestures',
     undoAction: 'Undo',
     redoAction: 'Redo',
     centerAction: 'Center view',
@@ -112,7 +113,7 @@ export const translations = {
     yes: 'Yes',
     no: 'No',
     helpText:
-      '• Left click — add point / move point\n• Shift + drag — snap to grid\n• Alt + drag point — round corner\n• Middle mouse or Space — pan\n• Wheel — zoom\n• Right click — context menu\n• Double-click point — delete\n• Ctrl+Z / Ctrl+Y — undo/redo\n• F — center view\n• R — rotate obstacle\n• M — measure distance',
+      '• Left click — add point / move point\n• Shift + drag — snap to grid\n• Alt + drag point — round corner\n• Middle mouse or Space — pan\n• Wheel or pinch — zoom\n• Two-finger pan — move view\n• Tap-hold — context menu\n• Double-click point — delete\n• Two-finger tap — center view\n• Three-finger swipe — undo/redo\n• Ctrl+Z / Ctrl+Y — undo/redo\n• F — center view\n• R — rotate obstacle\n• M — measure distance',
   },
   pl: {
     login: 'Zaloguj',
@@ -217,6 +218,7 @@ export const translations = {
     waterLarge: 'Duża fosa',
     preferences: 'Ustawienia',
     highContrast: 'Tryb wysokiego kontrastu',
+    advancedGestures: 'Zaawansowane gesty',
     undoAction: 'Cofnij',
     redoAction: 'Ponów',
     centerAction: 'Wycentruj widok',
@@ -227,7 +229,7 @@ export const translations = {
     yes: 'Tak',
     no: 'Nie',
     helpText:
-      '• Lewy klik — dodaj/przesuń punkt\n• Shift + przeciągaj — przyciągaj do siatki\n• Alt + przeciągaj punkt — zaokrąglij róg\n• Środkowy przycisk lub spacja — przesuwaj widok\n• Rolka — zoom\n• Prawy klik — menu kontekstowe\n• Podwójne kliknięcie punktu — usuń\n• Ctrl+Z / Ctrl+Y — cofaj/ponawiaj\n• F — wycentruj widok\n• R — obrót przeszkody\n• M — pomiar odległości',
+      '• Lewy klik — dodaj/przesuń punkt\n• Shift + przeciągaj — przyciągaj do siatki\n• Alt + przeciągaj punkt — zaokrąglij róg\n• Środkowy przycisk lub spacja — przesuwaj widok\n• Rolka lub szczypanie — zoom\n• Przeciąg dwoma palcami — przesuwaj widok\n• Przytrzymaj dotyk — menu kontekstowe\n• Podwójne kliknięcie punktu — usuń\n• Dwoma palcami stuknij — wycentruj\n• Trzema palcami przesuń — cofaj/ponawiaj\n• Ctrl+Z / Ctrl+Y — cofaj/ponawiaj\n• F — wycentruj widok\n• R — obrót przeszkody\n• M — pomiar odległości',
   },
 } as const
 

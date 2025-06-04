@@ -93,7 +93,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
   }: Props,
   ref: ForwardedRef<LayoutCanvasHandle>,
 ) {
-  const { lang, shortcuts } = useApp()
+  const { lang, shortcuts, advancedGestures } = useApp()
   const t = translations[lang]
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -177,7 +177,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
     },
   }))
 
-  useMultiTouch(canvasRef, centerView, onUndo, onRedo)
+  useMultiTouch(canvasRef, centerView, onUndo, onRedo, advancedGestures)
 
   useEffect(() => {
     const keyHandler = (ev: KeyboardEvent) => {
@@ -283,7 +283,12 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
       const actionActive =
         dragIndex !== null || dragEl !== null || radiusIndex !== null
-      if (!actionActive && !panStart && pointers.current.size === 2) {
+      if (
+        advancedGestures &&
+        !actionActive &&
+        !panStart &&
+        pointers.current.size === 2
+      ) {
         const [a, b] = Array.from(pointers.current.values())
         pinch.current = {
           dist: Math.hypot(b.x - a.x, b.y - a.y),
@@ -397,6 +402,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     }
     if (
+      advancedGestures &&
       pinch.current &&
       pointers.current.size === 2 &&
       actionPointer.current === null &&
@@ -808,11 +814,20 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
   }
 
   useEffect(() => {
-    const canvas = canvasRef.current!
-    const ctx = canvas.getContext('2d')!
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.setTransform(zoom, 0, 0, zoom, offset.x, offset.y)
+    const handle = requestAnimationFrame(() => {
+      const canvas = canvasRef.current!
+      const ctx = canvas.getContext('2d')!
+      const dpr = window.devicePixelRatio || 1
+      if (canvas.width !== 2000 * dpr) {
+        canvas.width = 2000 * dpr
+        canvas.height = 1500 * dpr
+        ctx.scale(dpr, dpr)
+      }
+      const styles = getComputedStyle(document.body)
+      const highlight = styles.getPropertyValue('--highlight') || '#1fa870'
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.setTransform(zoom, 0, 0, zoom, offset.x, offset.y)
 
     if (showGrid) {
       for (let i = 0; i <= canvas.width; i += gridSpacing) {
@@ -874,7 +889,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       if (!isClosed() && i === 0 && hoverFirst) radius = 7
       ctx.fillStyle =
         selectedIdx === i
-          ? '#1fa870'
+          ? highlight
           : dragIndex === i || (!isClosed() && i === 0 && hoverFirst)
           ? 'orange'
           : 'red'
@@ -973,6 +988,8 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       const my = (measureStart.y + measureEnd.y) / 2
       ctx.fillText(len.toFixed(2) + 'm', mx + 4, my - 4)
     }
+    })
+    return () => cancelAnimationFrame(handle)
   }, [points, showGrid, scale, gridSpacing, elements, offset, zoom, curves, dragIndex, dragPreview, measureStart, measureEnd, measureMode])
 
   useEffect(() => {

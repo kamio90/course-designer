@@ -5,8 +5,10 @@ export default function useMultiTouch(
   center: () => void,
   undo?: () => void,
   redo?: () => void,
+  enabled = true,
 ) {
   useEffect(() => {
+    if (!enabled) return
     const el = ref.current
     if (!el) return
     const points = new Map<number, { x: number; y: number }>()
@@ -70,5 +72,5 @@ export default function useMultiTouch(
       el.removeEventListener('pointerup', up)
       el.removeEventListener('pointercancel', up)
     }
-  }, [ref, center, undo, redo])
+  }, [ref, center, undo, redo, enabled])
 }
