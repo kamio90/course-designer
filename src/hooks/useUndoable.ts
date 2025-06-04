@@ -32,9 +32,14 @@ export default function useUndoable<T>(initial: T) {
     })
   }
 
+  const replace = (value: T) => {
+    setState(value)
+  }
+
   return {
     state,
     set,
+    replace,
     undo,
     redo,
     canUndo: past.current.length > 0,

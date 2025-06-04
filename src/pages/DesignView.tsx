@@ -5,17 +5,31 @@ import LayoutCanvas, { type Point, type ElementItem } from '../components/Layout
 import LayoutTools from '../components/LayoutTools'
 import LayoutStats from '../components/LayoutStats'
 import { useApp } from '../context/AppContext'
+import { translations } from '../i18n'
 import useUndoable from '../hooks/useUndoable'
 
 export default function DesignView() {
   const { projectId } = useParams()
   const navigate = useNavigate()
-  const { projects } = useApp()
+  const { projects, lang } = useApp()
+  const t = translations[lang]
   const project = projects.find((p) => p.id === projectId)
   const pointsHistory = useUndoable<Point[]>([])
   const elementsHistory = useUndoable<ElementItem[]>([])
-  const { state: points, set: setPoints, undo: undoPts, redo: redoPts } = pointsHistory
-  const { state: elements, set: setElements, undo: undoEls, redo: redoEls } = elementsHistory
+  const {
+    state: points,
+    set: setPoints,
+    replace: replacePoints,
+    undo: undoPts,
+    redo: redoPts,
+  } = pointsHistory
+  const {
+    state: elements,
+    set: setElements,
+    replace: replaceElements,
+    undo: undoEls,
+    redo: redoEls,
+  } = elementsHistory
   const [showGrid, setShowGrid] = useState(true)
   const [scale, setScale] = useState(10)
   const [gridSpacing, setGridSpacing] = useState(50)
@@ -23,6 +37,31 @@ export default function DesignView() {
   const [autoStraight, setAutoStraight] = useState(false)
 
   const toggleScale = () => setScale((s) => (s === 10 ? 1 : 10))
+
+  // restore autosaved layout on mount
+  useEffect(() => {
+    if (!projectId) return
+    const saved = localStorage.getItem(`autosave_${projectId}`)
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (parsed.points) replacePoints(parsed.points as Point[])
+        if (parsed.elements) replaceElements(parsed.elements as ElementItem[])
+        alert(t.autosaveRestored)
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [projectId])
+
+  // autosave on change
+  useEffect(() => {
+    if (!projectId) return
+    localStorage.setItem(
+      `autosave_${projectId}`,
+      JSON.stringify({ points, elements }),
+    )
+  }, [projectId, points, elements])
 
   const closed =
     points.length > 3 &&
