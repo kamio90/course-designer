@@ -67,6 +67,7 @@ export default function LayoutCanvas({
 
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dragEl, setDragEl] = useState<string | null>(null)
+  const [dragPreview, setDragPreview] = useState<{ x: number; y: number } | null>(null)
   const [context, setContext] = useState<ContextTarget | null>(null)
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null)
   const [renameInfo, setRenameInfo] = useState<{ index: number; value: string } | null>(null)
@@ -146,8 +147,12 @@ export default function LayoutCanvas({
     }
     if (dragIndex !== null) {
       setPoints(points.map((p, i) => (i === dragIndex ? { ...p, x, y } : p)))
+      setDragPreview({ x, y })
     } else if (dragEl) {
       setElements(elements.map((el) => (el.id === dragEl ? { ...el, x, y } : el)))
+      setDragPreview({ x, y })
+    } else {
+      setDragPreview(null)
     }
 
     // tooltip detection
@@ -175,6 +180,7 @@ export default function LayoutCanvas({
     setDragIndex(null)
     setDragEl(null)
     setPanStart(null)
+    setDragPreview(null)
   }
 
   const handleContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -369,7 +375,17 @@ export default function LayoutCanvas({
       ctx.fillText(String(idx + 1), 12, 0)
       ctx.restore()
     })
-  }, [points, showGrid, scale, gridSpacing, elements, offset, zoom, curves, dragIndex])
+
+    if (dragPreview) {
+      ctx.save()
+      ctx.globalAlpha = 0.3
+      ctx.fillStyle = 'orange'
+      ctx.beginPath()
+      ctx.arc(dragPreview.x, dragPreview.y, 8, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+    }
+  }, [points, showGrid, scale, gridSpacing, elements, offset, zoom, curves, dragIndex, dragPreview])
 
   return (
     <Box sx={{ position: 'relative' }}>
@@ -396,6 +412,7 @@ export default function LayoutCanvas({
         onClose={() => setContext(null)}
         anchorReference="anchorPosition"
         anchorPosition={anchor ? { left: anchor.x, top: anchor.y } : undefined}
+        PaperProps={{ sx: { borderRadius: 2, boxShadow: 3, p: 0.5 } }}
       >
         {context?.type === 'canvas' && (
           <MenuItem onClick={createPoint}>{t.createPointHere}</MenuItem>
