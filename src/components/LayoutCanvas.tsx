@@ -129,6 +129,8 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
   >(null)
   const actionPointer = useRef<number | null>(null)
   const panPointer = useRef<number | null>(null)
+  const forceState = useRef(new Map<number, boolean>())
+  const HARD_PRESS = 0.5
 
   const cancelLongPress = () => {
     if (longPressTimer.current) window.clearTimeout(longPressTimer.current)
@@ -276,7 +278,31 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
     return Math.hypot(px - xx, py - yy)
   }
 
+  const forcePress = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const { x, y } = getPos(e)
+    for (let i = points.length - 1; i >= 0; i--) {
+      const p = points[i]
+      if (Math.hypot(p.x - x, p.y - y) < 8) {
+        const dup = { ...p, id: crypto.randomUUID() }
+        const list = [...points]
+        list.splice(i + 1, 0, dup)
+        setPoints(list)
+        setSelectedIdx(i + 1)
+        return
+      }
+    }
+    if (!isClosed()) {
+      setPoints([...points, { id: crypto.randomUUID(), x, y, radius: 0 }])
+      setSelectedIdx(points.length)
+    }
+  }
+
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    forceState.current.set(e.pointerId, e.pressure >= HARD_PRESS)
+    if (e.pressure >= HARD_PRESS) {
+      forcePress(e)
+      return
+    }
     if (e.pointerType === 'touch') {
       e.preventDefault()
       e.currentTarget.setPointerCapture(e.pointerId)
@@ -421,6 +447,11 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       })
       return
     }
+    if (forceState.current.has(e.pointerId) && !forceState.current.get(e.pointerId) && e.pressure >= HARD_PRESS) {
+      forceState.current.set(e.pointerId, true)
+      forcePress(e)
+      return
+    }
     if (longPressPos.current) {
       const dx = e.clientX - longPressPos.current.x
       const dy = e.clientY - longPressPos.current.y
@@ -542,6 +573,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
     if (pointers.current.size === 0) {
       pinch.current = null
     }
+    forceState.current.delete(e.pointerId)
   }
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -812,6 +844,24 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       { id: crypto.randomUUID(), type, x, y, rotation: 0, w: 30, h: 30 },
     ])
   }
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const forceHandler = (ev: MouseEvent & { webkitForce?: number; pointerId?: number }) => {
+      if (ev.webkitForce !== undefined && ev.webkitForce >= 2) {
+        const id = ev.pointerId ?? 0
+        if (!forceState.current.get(id)) {
+          forceState.current.set(id, true)
+          forcePress(ev as unknown as React.PointerEvent<HTMLCanvasElement>)
+        }
+      }
+    }
+    canvas.addEventListener('webkitmouseforcechanged', forceHandler as EventListener)
+    return () => {
+      canvas.removeEventListener('webkitmouseforcechanged', forceHandler as EventListener)
+    }
+  }, [points])
 
   useEffect(() => {
     const handle = requestAnimationFrame(() => {
