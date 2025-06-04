@@ -142,6 +142,7 @@ export default function LayoutCanvas({
       }
     }
     if (e.button === 2) return
+    if (isClosed()) return
     let nx = x
     let ny = y
     if (autoStraight && points.length) {
@@ -264,6 +265,10 @@ export default function LayoutCanvas({
   }
 
   const createPoint = () => {
+    if (isClosed()) {
+      setContext(null)
+      return
+    }
     if (context?.canvasPos) {
       setPoints([...points, { id: crypto.randomUUID(), x: context.canvasPos.x, y: context.canvasPos.y }])
     }
