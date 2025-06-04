@@ -23,7 +23,7 @@ import { useApp } from '../context/AppContext'
 import { translations } from '../i18n'
 import { matchShortcut } from '../utils/shortcuts'
 import useMultiTouch from '../hooks/useMultiTouch'
-import useGesturePlugins, { GesturePlugin } from '../hooks/useGesturePlugins'
+import useGesturePlugins, { type GesturePlugin } from '../hooks/useGesturePlugins'
 
 export interface ElementItem {
   id: string

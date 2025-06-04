@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import type { Point } from './LayoutCanvas'
-import useGesturePlugins, { GesturePlugin } from '../hooks/useGesturePlugins'
+import useGesturePlugins, { type GesturePlugin } from '../hooks/useGesturePlugins'
 
 export interface Obstacle {
   id: string
