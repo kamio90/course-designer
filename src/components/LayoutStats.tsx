@@ -32,9 +32,10 @@ export default function LayoutStats({ points, scale }: Props) {
       length += Math.hypot(dx, dy)
     }
     const closed =
-      points.length > 2 &&
+      points.length > 3 &&
       points[0].x === points[points.length - 1].x &&
       points[0].y === points[points.length - 1].y
+    const unique = closed ? points.length - 1 : points.length
     let area = 0
     if (closed) {
       for (let i = 0; i < points.length - 1; i++) {
@@ -42,8 +43,8 @@ export default function LayoutStats({ points, scale }: Props) {
       }
       area = Math.abs(area / 2)
     }
-    const edges = points.length > 1 ? points.length - 1 : 0
-    return { length, closed, area, edges }
+    const edges = unique > 1 ? unique : 0
+    return { length, closed, area, edges, unique }
   }, [points])
 
   const width = collapsed ? 40 : 240
@@ -71,7 +72,7 @@ export default function LayoutStats({ points, scale }: Props) {
       {!collapsed && (
         <List dense>
           <ListItem>
-            <ListItemText primary={`${t.totalPoints}: ${points.length}`} />
+            <ListItemText primary={`${t.totalPoints}: ${stats.unique}`} />
           </ListItem>
           <ListItem>
             <ListItemText primary={`${t.perimeter}: ${(stats.length / scale).toFixed(2)} m`} />
@@ -83,7 +84,7 @@ export default function LayoutStats({ points, scale }: Props) {
             <ListItemText primary={`${t.area}: ${(stats.area / (scale * scale)).toFixed(2)} m²`} />
           </ListItem>
           <ListItem>
-            <ListItemText primary={`${t.closedShape}: ${stats.closed ? 'Yes' : 'No'}`} />
+            <ListItemText primary={`${t.closedShape}: ${stats.closed ? t.yes : t.no}`} />
           </ListItem>
         </List>
       )}

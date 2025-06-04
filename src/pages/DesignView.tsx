@@ -24,7 +24,9 @@ export default function DesignView() {
   const toggleScale = () => setScale((s) => (s === 10 ? 1 : 10))
 
   const closed =
-    points.length > 2 && points[0].x === points[points.length - 1].x && points[0].y === points[points.length - 1].y
+    points.length > 3 &&
+    points[0].x === points[points.length - 1].x &&
+    points[0].y === points[points.length - 1].y
 
   return (
     <div className="dashboard">

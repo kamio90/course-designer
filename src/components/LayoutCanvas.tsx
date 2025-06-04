@@ -76,6 +76,12 @@ export default function LayoutCanvas({
   const [zoom, setZoom] = useState(1)
   const [curves, setCurves] = useState<Record<number, boolean>>({})
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
+  const [hoverFirst, setHoverFirst] = useState(false)
+
+  const isClosed = () =>
+    points.length > 3 &&
+    points[0].x === points[points.length - 1].x &&
+    points[0].y === points[points.length - 1].y
 
   const getPos = (e: { clientX: number; clientY: number; shiftKey: boolean }) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -121,6 +127,10 @@ export default function LayoutCanvas({
     for (let i = points.length - 1; i >= 0; i--) {
       const p = points[i]
       if (Math.hypot(p.x - x, p.y - y) < 8) {
+        if (i === 0 && points.length >= 3 && !isClosed() && e.button === 0) {
+          setPoints([...points, { ...points[0] }])
+          return
+        }
         setDragIndex(i)
         return
       }
@@ -150,13 +160,27 @@ export default function LayoutCanvas({
       return
     }
     if (dragIndex !== null) {
-      setPoints(points.map((p, i) => (i === dragIndex ? { ...p, x, y } : p)))
+      setPoints(
+        points.map((p, i) => {
+          if (dragIndex === i) return { ...p, x, y }
+          if (isClosed() && ((dragIndex === 0 && i === points.length - 1) || (dragIndex === points.length - 1 && i === 0))) {
+            return { ...p, x, y }
+          }
+          return p
+        }),
+      )
       setDragPreview({ x, y })
     } else if (dragEl) {
       setElements(elements.map((el) => (el.id === dragEl ? { ...el, x, y } : el)))
       setDragPreview({ x, y })
     } else {
       setDragPreview(null)
+    }
+
+    if (!isClosed() && points.length > 2 && Math.hypot(points[0].x - x, points[0].y - y) < 8) {
+      setHoverFirst(true)
+    } else {
+      setHoverFirst(false)
     }
 
     // tooltip detection
@@ -185,6 +209,17 @@ export default function LayoutCanvas({
     setDragEl(null)
     setPanStart(null)
     setDragPreview(null)
+    setHoverFirst(false)
+  }
+
+  const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const { x, y } = getPos(e)
+    for (let i = points.length - 1; i >= 0; i--) {
+      if (Math.hypot(points[i].x - x, points[i].y - y) < 8) {
+        removePoint(i)
+        break
+      }
+    }
   }
 
   const handleContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -236,6 +271,19 @@ export default function LayoutCanvas({
   }
 
   const removePoint = (idx: number) => {
+    if (isClosed()) {
+      if (idx === 0) {
+        const trimmed = points.slice(1, points.length - 1)
+        setPoints(trimmed)
+        setContext(null)
+        return
+      }
+      if (idx === points.length - 1) {
+        setPoints(points.slice(0, points.length - 1))
+        setContext(null)
+        return
+      }
+    }
     setPoints(points.filter((_, i) => i !== idx))
     setContext(null)
   }
@@ -291,7 +339,11 @@ export default function LayoutCanvas({
 
   const deleteLine = (idx: number) => {
     if (idx + 1 >= points.length) return
-    setPoints(points.filter((_, i) => i !== idx + 1))
+    if (isClosed() && idx === points.length - 2) {
+      setPoints(points.slice(0, points.length - 1))
+    } else {
+      setPoints(points.filter((_, i) => i !== idx + 1))
+    }
     setContext(null)
   }
 
@@ -352,8 +404,9 @@ export default function LayoutCanvas({
     ctx.font = '12px sans-serif'
     points.forEach((p, i) => {
       ctx.beginPath()
-      const radius = dragIndex === i ? 7 : 5
-      ctx.fillStyle = dragIndex === i ? 'orange' : 'red'
+      let radius = dragIndex === i ? 7 : 5
+      if (!isClosed() && i === 0 && hoverFirst) radius = 7
+      ctx.fillStyle = dragIndex === i || (!isClosed() && i === 0 && hoverFirst) ? 'orange' : 'red'
       ctx.arc(p.x, p.y, radius, 0, Math.PI * 2)
       ctx.fill()
       const label = p.label ?? String(i + 1)
@@ -405,6 +458,8 @@ export default function LayoutCanvas({
         onWheel={(e) => setZoom((z) => Math.max(0.2, Math.min(3, z - e.deltaY * 0.001)))}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
+        onMouseLeave={() => setHoverFirst(false)}
+        onDoubleClick={handleDoubleClick}
       />
       {tooltip && (
         <Tooltip open title={tooltip.text}>

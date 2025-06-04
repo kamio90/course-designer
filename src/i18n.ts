@@ -81,6 +81,10 @@ export const translations = {
     gate: 'Gate',
     waterSmall: 'Small Water',
     waterLarge: 'Large Water',
+    yes: 'Yes',
+    no: 'No',
+    helpText:
+      '• Left click — add point / move point\n• Shift + drag — snap to grid\n• Middle mouse — pan\n• Wheel — zoom\n• Right click — context menu\n• Double-click point — delete\n• Ctrl+Z / Ctrl+Y — undo/redo\n• F — center view\n• R — rotate obstacle',
   },
   pl: {
     login: 'Zaloguj',
@@ -164,6 +168,10 @@ export const translations = {
     gate: 'Brama',
     waterSmall: 'Mała fosa',
     waterLarge: 'Duża fosa',
+    yes: 'Tak',
+    no: 'Nie',
+    helpText:
+      '• Lewy klik — dodaj/przesuń punkt\n• Shift + przeciągaj — przyciągaj do siatki\n• Środkowy przycisk — przesuwaj widok\n• Rolka — zoom\n• Prawy klik — menu kontekstowe\n• Podwójne kliknięcie punktu — usuń\n• Ctrl+Z / Ctrl+Y — cofaj/ponawiaj\n• F — wycentruj widok\n• R — obrót przeszkody',
   },
 } as const
 

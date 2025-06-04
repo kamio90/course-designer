@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   AppBar,
   Toolbar,
@@ -48,6 +48,14 @@ export default function DesignTopBar({
   const { lang } = useApp()
   const t = translations[lang]
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '?') setHelpVisible(true)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   return (
     <AppBar position="static" className="design-topbar">
       <Toolbar>
@@ -94,7 +102,7 @@ export default function DesignTopBar({
         <DialogTitle>{t.help}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-line' }}>
-            {`Left click — add/move points\nShift + drag — snap to grid\nMiddle mouse — pan\nWheel — zoom\nRight click — context actions\nR — rotate obstacle\nF — center view`}
+            {t.helpText}
           </Typography>
         </DialogContent>
         <DialogActions>
