@@ -54,6 +54,8 @@ export default function ObstacleCanvas({
       }
     | null
   >(null)
+  const actionPointer = useRef<number | null>(null)
+  const panPointer = useRef<number | null>(null)
 
   const getPos = (e: { clientX: number; clientY: number; shiftKey: boolean }) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -75,7 +77,8 @@ export default function ObstacleCanvas({
       e.preventDefault()
       e.currentTarget.setPointerCapture(e.pointerId)
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-      if (pointers.current.size === 2) {
+      const actionActive = dragId || resize
+      if (!actionActive && !panStart && pointers.current.size === 2) {
         const [a, b] = Array.from(pointers.current.values())
         pinch.current = {
           dist: Math.hypot(b.x - a.x, b.y - a.y),
@@ -83,11 +86,15 @@ export default function ObstacleCanvas({
           center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
           offset,
         }
+      } else if (actionActive && !panStart) {
+        setPanStart({ x: e.clientX, y: e.clientY })
+        panPointer.current = e.pointerId
       }
     }
     if (e.button === 1) {
       e.currentTarget.setPointerCapture(e.pointerId)
       setPanStart({ x: e.clientX, y: e.clientY })
+      panPointer.current = e.pointerId
       return
     }
     const { x, y } = getPos(e)
@@ -103,6 +110,7 @@ export default function ObstacleCanvas({
         if (Math.hypot(x - h.x, y - h.y) < 6) {
           e.currentTarget.setPointerCapture(e.pointerId)
           setResize({ id: o.id, dir })
+          actionPointer.current = e.pointerId
           return
         }
       }
@@ -117,7 +125,8 @@ export default function ObstacleCanvas({
         } else {
           e.currentTarget.setPointerCapture(e.pointerId)
           setDragId(o.id)
-        }
+          actionPointer.current = e.pointerId
+          }
         return
       }
     }
@@ -127,7 +136,12 @@ export default function ObstacleCanvas({
     if (pointers.current.has(e.pointerId)) {
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     }
-    if (pinch.current && pointers.current.size === 2) {
+    if (
+      pinch.current &&
+      pointers.current.size === 2 &&
+      actionPointer.current === null &&
+      panPointer.current === null
+    ) {
       e.preventDefault()
       const [a, b] = Array.from(pointers.current.values())
       const dist = Math.hypot(b.x - a.x, b.y - a.y)
@@ -141,7 +155,7 @@ export default function ObstacleCanvas({
       })
       return
     }
-    if (panStart) {
+    if (panStart && e.pointerId === panPointer.current) {
       e.preventDefault()
       setOffset({
         x: offset.x + (e.clientX - panStart.x),
@@ -150,7 +164,7 @@ export default function ObstacleCanvas({
       setPanStart({ x: e.clientX, y: e.clientY })
       return
     }
-    if (resize) {
+    if (resize && e.pointerId === actionPointer.current) {
       e.preventDefault()
       const { x, y } = getPos(e)
       setObstacles(
@@ -170,7 +184,7 @@ export default function ObstacleCanvas({
           }
         }),
       )
-    } else if (dragId) {
+    } else if (dragId && e.pointerId === actionPointer.current) {
       e.preventDefault()
       const { x, y } = getPos(e)
       setObstacles(obstacles.map((o) => (o.id === dragId ? { ...o, x, y } : o)))
@@ -185,9 +199,15 @@ export default function ObstacleCanvas({
     if (pointers.current.size < 2) {
       pinch.current = null
     }
-    setDragId(null)
-    setPanStart(null)
-    setResize(null)
+    if (e.pointerId === actionPointer.current) {
+      setDragId(null)
+      setResize(null)
+      actionPointer.current = null
+    }
+    if (e.pointerId === panPointer.current) {
+      setPanStart(null)
+      panPointer.current = null
+    }
   }
 
   const handleDrop = (e: React.DragEvent<HTMLCanvasElement>) => {

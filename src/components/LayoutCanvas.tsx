@@ -118,6 +118,8 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       }
     | null
   >(null)
+  const actionPointer = useRef<number | null>(null)
+  const panPointer = useRef<number | null>(null)
 
   const cancelLongPress = () => {
     if (longPressTimer.current) window.clearTimeout(longPressTimer.current)
@@ -270,7 +272,9 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       e.preventDefault()
       e.currentTarget.setPointerCapture(e.pointerId)
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-      if (pointers.current.size === 2) {
+      const actionActive =
+        dragIndex !== null || dragEl !== null || radiusIndex !== null
+      if (!actionActive && !panStart && pointers.current.size === 2) {
         const [a, b] = Array.from(pointers.current.values())
         pinch.current = {
           dist: Math.hypot(b.x - a.x, b.y - a.y),
@@ -278,7 +282,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
           center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
           offset,
         }
-      } else {
+      } else if (!actionActive) {
         const pos = getPos(e)
         const cx = e.clientX
         const cy = e.clientY
@@ -286,6 +290,9 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
         longPressTimer.current = window.setTimeout(() => {
           openContext(pos, cx, cy)
         }, 600)
+      } else if (!panStart) {
+        setPanStart({ x: e.clientX, y: e.clientY })
+        panPointer.current = e.pointerId
       }
     }
     if (measureMode && e.button === 0) {
@@ -297,6 +304,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       } else {
         setMeasureEnd({ x, y })
       }
+      actionPointer.current = e.pointerId
       return
     }
     if (activeTool && e.pointerType === 'touch') {
@@ -312,6 +320,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       e.currentTarget.setPointerCapture(e.pointerId)
       cancelLongPress()
       setPanStart({ x: e.clientX, y: e.clientY })
+      panPointer.current = e.pointerId
       return
     }
     const { x, y } = getPos(e)
@@ -320,9 +329,10 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       const p = points[i]
       if (Math.hypot(p.x - x, p.y - y) < 8) {
         if (e.altKey) {
-          cancelLongPress()
-          setRadiusIndex(i)
-          return
+        cancelLongPress()
+        setRadiusIndex(i)
+        actionPointer.current = e.pointerId
+        return
         }
         if (i === 0 && points.length >= 3 && !isClosed() && e.button === 0) {
           cancelLongPress()
@@ -333,6 +343,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
         cancelLongPress()
         setDragIndex(i)
         setSelectedIdx(i)
+        actionPointer.current = e.pointerId
         return
       }
     }
@@ -341,6 +352,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
         cancelLongPress()
         setDragEl(el.id)
         setSelectedIdx(null)
+        actionPointer.current = e.pointerId
         return
       }
     }
@@ -375,7 +387,12 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
     if (pointers.current.has(e.pointerId)) {
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     }
-    if (pinch.current && pointers.current.size === 2) {
+    if (
+      pinch.current &&
+      pointers.current.size === 2 &&
+      actionPointer.current === null &&
+      panPointer.current === null
+    ) {
       e.preventDefault()
       const [a, b] = Array.from(pointers.current.values())
       const dist = Math.hypot(b.x - a.x, b.y - a.y)
@@ -402,13 +419,13 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       setMeasureEnd({ x, y })
       return
     }
-    if (panStart) {
+    if (panStart && e.pointerId === panPointer.current) {
       e.preventDefault()
       setOffset({ x: offset.x + (e.clientX - panStart.x), y: offset.y + (e.clientY - panStart.y) })
       setPanStart({ x: e.clientX, y: e.clientY })
       return
     }
-    if (radiusIndex !== null) {
+    if (radiusIndex !== null && e.pointerId === actionPointer.current) {
       e.preventDefault()
       const base = points[radiusIndex]
       const r = Math.hypot(base.x - x, base.y - y)
@@ -416,7 +433,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
         points.map((p, i) => (i === radiusIndex ? { ...p, radius: r } : p)),
       )
       setDragPreview({ x, y })
-    } else if (dragIndex !== null) {
+    } else if (dragIndex !== null && e.pointerId === actionPointer.current) {
       e.preventDefault()
       let nx = x
       let ny = y
@@ -448,7 +465,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
         }),
       )
       setDragPreview({ x: nx, y: ny })
-    } else if (dragEl) {
+    } else if (dragEl && e.pointerId === actionPointer.current) {
       e.preventDefault()
       setElements(elements.map((el) => (el.id === dragEl ? { ...el, x, y } : el)))
       setDragPreview({ x, y })
@@ -491,18 +508,25 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
     if (pointers.current.size < 2) {
       pinch.current = null
     }
-    if (dragIndex !== null) setSelectedIdx(dragIndex)
-    setDragIndex(null)
-    setDragEl(null)
-    setPanStart(null)
+    if (e.pointerId === actionPointer.current) {
+      if (dragIndex !== null) setSelectedIdx(dragIndex)
+      setDragIndex(null)
+      setDragEl(null)
+      setRadiusIndex(null)
+      actionPointer.current = null
+    }
+    if (e.pointerId === panPointer.current) {
+      setPanStart(null)
+      panPointer.current = null
+    }
     setDragPreview(null)
     setHoverFirst(false)
-    setRadiusIndex(null)
     if (longPressTimer.current) window.clearTimeout(longPressTimer.current)
     longPressTimer.current = undefined
     longPressPos.current = null
-    pinch.current = null
-    pointers.current.clear()
+    if (pointers.current.size === 0) {
+      pinch.current = null
+    }
   }
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
