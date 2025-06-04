@@ -79,6 +79,17 @@ export default function LayoutCanvas({
   const [hoverFirst, setHoverFirst] = useState(false)
   const [closed, setClosed] = useState(false)
 
+  useEffect(() => {
+    const keyHandler = (ev: KeyboardEvent) => {
+      if (ev.key.toLowerCase() === 'f') {
+        setOffset({ x: 0, y: 0 })
+        setZoom(1)
+      }
+    }
+    window.addEventListener('keydown', keyHandler)
+    return () => window.removeEventListener('keydown', keyHandler)
+  }, [setOffset, setZoom])
+
   const isClosed = () => closed
 
   const getPos = (e: { clientX: number; clientY: number; shiftKey: boolean }) => {

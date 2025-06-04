@@ -109,17 +109,21 @@ export default function ObstacleCanvas({
 
   useEffect(() => {
     const keyHandler = (ev: KeyboardEvent) => {
-      if (ev.key.toLowerCase() === 'r' && dragId) {
+      const k = ev.key.toLowerCase()
+      if (k === 'r' && dragId) {
         setObstacles(
           obstacles.map((o) =>
             o.id === dragId ? { ...o, rotation: o.rotation + 15 } : o,
           ),
         )
+      } else if (k === 'f') {
+        setOffset({ x: 0, y: 0 })
+        setZoom(1)
       }
     }
     window.addEventListener('keydown', keyHandler)
     return () => window.removeEventListener('keydown', keyHandler)
-  }, [dragId, setObstacles])
+  }, [dragId, setObstacles, setOffset, setZoom])
 
   useEffect(() => {
     const canvas = canvasRef.current!
