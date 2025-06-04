@@ -61,6 +61,7 @@ export default function ObstacleCanvas({
   }
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (e.pointerType === 'touch') e.preventDefault()
     if (e.button === 1) {
       setPanStart({ x: e.clientX, y: e.clientY })
       return
@@ -278,6 +279,8 @@ export default function ObstacleCanvas({
       onPointerUp={handlePointerUp}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
+      onContextMenuCapture={(e) => e.preventDefault()}
+      onContextMenu={(e) => e.preventDefault()}
       onWheel={(e) => setZoom((z) => Math.max(0.2, Math.min(3, z - e.deltaY * 0.001)))}
     />
   )

@@ -197,6 +197,7 @@ export default function LayoutCanvas({
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (e.pointerType === 'touch') {
+      e.preventDefault()
       const pos = getPos(e)
       const cx = e.clientX
       const cy = e.clientY
@@ -827,6 +828,7 @@ export default function LayoutCanvas({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
+        onContextMenuCapture={(e) => e.preventDefault()}
         onContextMenu={(e) => {
           e.preventDefault()
           handleContextMenu(e)
