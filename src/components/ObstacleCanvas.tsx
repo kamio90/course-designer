@@ -44,6 +44,16 @@ export default function ObstacleCanvas({
   const [zoom, setZoom] = useState(1)
   const [connectSel, setConnectSel] = useState<string | null>(null)
   const [resize, setResize] = useState<{ id: string; dir: 'n' | 's' | 'e' | 'w' } | null>(null)
+  const pointers = useRef(new Map<number, { x: number; y: number }>())
+  const pinch = useRef<
+    | {
+        dist: number
+        zoom: number
+        center: { x: number; y: number }
+        offset: { x: number; y: number }
+      }
+    | null
+  >(null)
 
   const getPos = (e: { clientX: number; clientY: number; shiftKey: boolean }) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -61,8 +71,22 @@ export default function ObstacleCanvas({
   }
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (e.pointerType === 'touch') e.preventDefault()
+    if (e.pointerType === 'touch') {
+      e.preventDefault()
+      e.currentTarget.setPointerCapture(e.pointerId)
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      if (pointers.current.size === 2) {
+        const [a, b] = Array.from(pointers.current.values())
+        pinch.current = {
+          dist: Math.hypot(b.x - a.x, b.y - a.y),
+          zoom,
+          center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+          offset,
+        }
+      }
+    }
     if (e.button === 1) {
+      e.currentTarget.setPointerCapture(e.pointerId)
       setPanStart({ x: e.clientX, y: e.clientY })
       return
     }
@@ -77,6 +101,7 @@ export default function ObstacleCanvas({
       for (const dir of ['e', 'w', 'n', 's'] as const) {
         const h = handles[dir]
         if (Math.hypot(x - h.x, y - h.y) < 6) {
+          e.currentTarget.setPointerCapture(e.pointerId)
           setResize({ id: o.id, dir })
           return
         }
@@ -90,6 +115,7 @@ export default function ObstacleCanvas({
             setConnectSel(o.id)
           }
         } else {
+          e.currentTarget.setPointerCapture(e.pointerId)
           setDragId(o.id)
         }
         return
@@ -98,7 +124,25 @@ export default function ObstacleCanvas({
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (pointers.current.has(e.pointerId)) {
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    }
+    if (pinch.current && pointers.current.size === 2) {
+      e.preventDefault()
+      const [a, b] = Array.from(pointers.current.values())
+      const dist = Math.hypot(b.x - a.x, b.y - a.y)
+      const scaleFactor = dist / pinch.current.dist
+      const cx = (a.x + b.x) / 2
+      const cy = (a.y + b.y) / 2
+      setZoom(() => Math.max(0.2, Math.min(3, pinch.current!.zoom * scaleFactor)))
+      setOffset({
+        x: pinch.current.offset.x + (cx - pinch.current.center.x),
+        y: pinch.current.offset.y + (cy - pinch.current.center.y),
+      })
+      return
+    }
     if (panStart) {
+      e.preventDefault()
       setOffset({
         x: offset.x + (e.clientX - panStart.x),
         y: offset.y + (e.clientY - panStart.y),
@@ -107,6 +151,7 @@ export default function ObstacleCanvas({
       return
     }
     if (resize) {
+      e.preventDefault()
       const { x, y } = getPos(e)
       setObstacles(
         obstacles.map((o) => {
@@ -126,12 +171,20 @@ export default function ObstacleCanvas({
         }),
       )
     } else if (dragId) {
+      e.preventDefault()
       const { x, y } = getPos(e)
       setObstacles(obstacles.map((o) => (o.id === dragId ? { ...o, x, y } : o)))
     }
   }
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+    pointers.current.delete(e.pointerId)
+    if (pointers.current.size < 2) {
+      pinch.current = null
+    }
     setDragId(null)
     setPanStart(null)
     setResize(null)
@@ -277,11 +330,19 @@ export default function ObstacleCanvas({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
       onContextMenuCapture={(e) => e.preventDefault()}
       onContextMenu={(e) => e.preventDefault()}
-      onWheel={(e) => setZoom((z) => Math.max(0.2, Math.min(3, z - e.deltaY * 0.001)))}
+      onWheel={(e) => {
+        e.preventDefault()
+        if (e.ctrlKey || e.metaKey) {
+          setZoom((z) => Math.max(0.2, Math.min(3, z - e.deltaY * 0.01)))
+        } else {
+          setOffset((o) => ({ x: o.x - e.deltaX, y: o.y - e.deltaY }))
+        }
+      }}
     />
   )
 }

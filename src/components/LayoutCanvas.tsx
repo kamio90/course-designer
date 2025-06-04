@@ -98,6 +98,16 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
   const [measureEnd, setMeasureEnd] = useState<{ x: number; y: number } | null>(null)
   const longPressTimer = useRef<number>()
   const longPressPos = useRef<{ x: number; y: number } | null>(null)
+  const pointers = useRef(new Map<number, { x: number; y: number }>())
+  const pinch = useRef<
+    | {
+        dist: number
+        zoom: number
+        center: { x: number; y: number }
+        offset: { x: number; y: number }
+      }
+    | null
+  >(null)
 
   const cancelLongPress = () => {
     if (longPressTimer.current) window.clearTimeout(longPressTimer.current)
@@ -234,13 +244,25 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (e.pointerType === 'touch') {
       e.preventDefault()
-      const pos = getPos(e)
-      const cx = e.clientX
-      const cy = e.clientY
-      longPressPos.current = { x: cx, y: cy }
-      longPressTimer.current = window.setTimeout(() => {
-        openContext(pos, cx, cy)
-      }, 600)
+      e.currentTarget.setPointerCapture(e.pointerId)
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      if (pointers.current.size === 2) {
+        const [a, b] = Array.from(pointers.current.values())
+        pinch.current = {
+          dist: Math.hypot(b.x - a.x, b.y - a.y),
+          zoom,
+          center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+          offset,
+        }
+      } else {
+        const pos = getPos(e)
+        const cx = e.clientX
+        const cy = e.clientY
+        longPressPos.current = { x: cx, y: cy }
+        longPressTimer.current = window.setTimeout(() => {
+          openContext(pos, cx, cy)
+        }, 600)
+      }
     }
     if (measureMode && e.button === 0) {
       cancelLongPress()
@@ -254,6 +276,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       return
     }
     if (e.button === 1 || (e.button === 0 && space)) {
+      e.currentTarget.setPointerCapture(e.pointerId)
       cancelLongPress()
       setPanStart({ x: e.clientX, y: e.clientY })
       return
@@ -316,6 +339,23 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const { x, y } = getPos(e)
+    if (pointers.current.has(e.pointerId)) {
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    }
+    if (pinch.current && pointers.current.size === 2) {
+      e.preventDefault()
+      const [a, b] = Array.from(pointers.current.values())
+      const dist = Math.hypot(b.x - a.x, b.y - a.y)
+      const scaleFactor = dist / pinch.current.dist
+      const cx = (a.x + b.x) / 2
+      const cy = (a.y + b.y) / 2
+      setZoom(() => Math.max(0.2, Math.min(3, pinch.current!.zoom * scaleFactor)))
+      setOffset({
+        x: pinch.current.offset.x + (cx - pinch.current.center.x),
+        y: pinch.current.offset.y + (cy - pinch.current.center.y),
+      })
+      return
+    }
     if (longPressPos.current) {
       const dx = e.clientX - longPressPos.current.x
       const dy = e.clientY - longPressPos.current.y
@@ -330,11 +370,13 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       return
     }
     if (panStart) {
+      e.preventDefault()
       setOffset({ x: offset.x + (e.clientX - panStart.x), y: offset.y + (e.clientY - panStart.y) })
       setPanStart({ x: e.clientX, y: e.clientY })
       return
     }
     if (radiusIndex !== null) {
+      e.preventDefault()
       const base = points[radiusIndex]
       const r = Math.hypot(base.x - x, base.y - y)
       setPoints(
@@ -342,6 +384,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       )
       setDragPreview({ x, y })
     } else if (dragIndex !== null) {
+      e.preventDefault()
       let nx = x
       let ny = y
       if (e.shiftKey && points.length > 1) {
@@ -373,6 +416,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       )
       setDragPreview({ x: nx, y: ny })
     } else if (dragEl) {
+      e.preventDefault()
       setElements(elements.map((el) => (el.id === dragEl ? { ...el, x, y } : el)))
       setDragPreview({ x, y })
     } else {
@@ -406,7 +450,14 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
     setTooltip(null)
   }
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+    pointers.current.delete(e.pointerId)
+    if (pointers.current.size < 2) {
+      pinch.current = null
+    }
     if (dragIndex !== null) setSelectedIdx(dragIndex)
     setDragIndex(null)
     setDragEl(null)
@@ -417,6 +468,8 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
     if (longPressTimer.current) window.clearTimeout(longPressTimer.current)
     longPressTimer.current = undefined
     longPressPos.current = null
+    pinch.current = null
+    pointers.current.clear()
   }
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -882,7 +935,14 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
           e.preventDefault()
           handleContextMenu(e)
         }}
-        onWheel={(e) => setZoom((z) => Math.max(0.2, Math.min(3, z - e.deltaY * 0.001)))}
+        onWheel={(e) => {
+          e.preventDefault()
+          if (e.ctrlKey || e.metaKey) {
+            setZoom((z) => Math.max(0.2, Math.min(3, z - e.deltaY * 0.01)))
+          } else {
+            setOffset((o) => ({ x: o.x - e.deltaX, y: o.y - e.deltaY }))
+          }
+        }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
         onMouseLeave={() => setHoverFirst(false)}
