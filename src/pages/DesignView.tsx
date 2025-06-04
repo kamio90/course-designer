@@ -7,6 +7,7 @@ import LayoutStats from '../components/LayoutStats'
 import { useApp } from '../context/AppContext'
 import { translations } from '../i18n'
 import useUndoable from '../hooks/useUndoable'
+import { selfIntersects } from '../utils/geometry'
 
 export default function DesignView() {
   const { projectId } = useParams()
@@ -35,6 +36,7 @@ export default function DesignView() {
   const [gridSpacing, setGridSpacing] = useState(50)
   const [snap, setSnap] = useState(false)
   const [autoStraight, setAutoStraight] = useState(false)
+  const [measureMode, setMeasureMode] = useState(false)
 
   const toggleScale = () => setScale((s) => (s === 10 ? 1 : 10))
 
@@ -67,6 +69,10 @@ export default function DesignView() {
     points.length > 3 &&
     points[0].x === points[points.length - 1].x &&
     points[0].y === points[points.length - 1].y
+  const validPolygon =
+    closed &&
+    points.length > 3 &&
+    !selfIntersects(points.slice(0, -1))
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -78,6 +84,8 @@ export default function DesignView() {
         e.preventDefault()
         redoPts()
         redoEls()
+      } else if (e.key.toLowerCase() === 'm') {
+        setMeasureMode((m) => !m)
       }
     }
     window.addEventListener('keydown', handler)
@@ -103,6 +111,10 @@ export default function DesignView() {
       <div className="body">
         <LayoutTools
           onSave={() => {
+            if (!validPolygon) {
+              alert(t.invalidShape)
+              return
+            }
             sessionStorage.setItem(`layout_${projectId}`, JSON.stringify(points))
             navigate(`/project/${projectId}/course`)
           }}
@@ -110,7 +122,31 @@ export default function DesignView() {
             setPoints([])
             setElements([])
           }}
-          canSave={closed}
+          onImport={(file) => {
+            const reader = new FileReader()
+            reader.onload = () => {
+              try {
+                const data = JSON.parse(reader.result as string)
+                if (data.points) replacePoints(data.points)
+                if (data.elements) replaceElements(data.elements)
+              } catch {
+                alert('Invalid file')
+              }
+            }
+            reader.readAsText(file)
+          }}
+          onExport={() => {
+            const blob = new Blob([
+              JSON.stringify({ points, elements }, null, 2),
+            ])
+            const a = document.createElement('a')
+            a.href = URL.createObjectURL(blob)
+            a.download = 'layout.json'
+            a.click()
+          }}
+          onToggleMeasure={() => setMeasureMode((m) => !m)}
+          measureMode={measureMode}
+          canSave={validPolygon}
         />
         <main>
           <h2>{project.title}</h2>
@@ -124,6 +160,8 @@ export default function DesignView() {
             autoStraight={autoStraight}
             elements={elements}
             setElements={setElements}
+            measureMode={measureMode}
+            onMeasureToggle={() => setMeasureMode((m) => !m)}
           />
         </main>
         <LayoutStats points={points} scale={scale} elements={elements} />

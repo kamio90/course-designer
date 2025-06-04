@@ -23,10 +23,22 @@ import { useApp } from '../context/AppContext'
 interface Props {
   onSave: () => void
   onClear: () => void
+  onImport: (data: File) => void
+  onExport: () => void
+  onToggleMeasure: () => void
+  measureMode: boolean
   canSave: boolean
 }
 
-export default function LayoutTools({ onSave, onClear, canSave }: Props) {
+export default function LayoutTools({
+  onSave,
+  onClear,
+  onImport,
+  onExport,
+  onToggleMeasure,
+  measureMode,
+  canSave,
+}: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const { lang } = useApp()
   const t = translations[lang]
@@ -62,8 +74,35 @@ export default function LayoutTools({ onSave, onClear, canSave }: Props) {
           <Button onClick={onSave} disabled={!canSave} fullWidth sx={{ mb: 1 }}>
             {t.saveLayout}
           </Button>
-          <Button onClick={onClear} fullWidth sx={{ mb: 1 }}>
+          <Button
+            onClick={() => {
+              if (confirm(t.confirmClear)) onClear()
+            }}
+            fullWidth
+            sx={{ mb: 1 }}
+          >
             {t.clearArea}
+          </Button>
+          <Button component="label" fullWidth sx={{ mb: 1 }}>
+            {t.importLayout}
+            <input
+              type="file"
+              hidden
+              onChange={(e) => {
+                if (e.target.files?.[0]) onImport(e.target.files[0])
+              }}
+            />
+          </Button>
+          <Button onClick={onExport} fullWidth sx={{ mb: 1 }}>
+            {t.exportLayout}
+          </Button>
+          <Button
+            onClick={onToggleMeasure}
+            fullWidth
+            color={measureMode ? 'secondary' : 'primary'}
+            sx={{ mb: 1 }}
+          >
+            {t.measure}
           </Button>
           <List dense>
             {items.map((item) => (

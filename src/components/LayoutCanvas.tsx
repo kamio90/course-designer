@@ -45,6 +45,8 @@ interface Props {
   autoStraight: boolean
   elements: ElementItem[]
   setElements: (e: ElementItem[]) => void
+  measureMode: boolean
+  onMeasureToggle?: () => void
 }
 
 interface ContextTarget {
@@ -63,6 +65,8 @@ export default function LayoutCanvas({
   autoStraight,
   elements,
   setElements,
+  measureMode,
+  onMeasureToggle,
 }: Props) {
   const { lang } = useApp()
   const t = translations[lang]
@@ -83,6 +87,8 @@ export default function LayoutCanvas({
   const [closed, setClosed] = useState(false)
   const [radiusIndex, setRadiusIndex] = useState<number | null>(null)
   const [space, setSpace] = useState(false)
+  const [measureStart, setMeasureStart] = useState<{ x: number; y: number } | null>(null)
+  const [measureEnd, setMeasureEnd] = useState<{ x: number; y: number } | null>(null)
 
   const centerView = () => {
     const canvas = canvasRef.current
@@ -117,6 +123,14 @@ export default function LayoutCanvas({
       if (k === 'f') {
         ev.preventDefault()
         centerView()
+      } else if (k === 'm') {
+        ev.preventDefault()
+        onMeasureToggle && onMeasureToggle()
+        setMeasureStart(null)
+        setMeasureEnd(null)
+      } else if (k === 'escape') {
+        setMeasureStart(null)
+        setMeasureEnd(null)
       } else if (k === 'enter' && points.length >= 3 && !closed) {
         ev.preventDefault()
         setPoints([...points, { ...points[0] }])
@@ -174,6 +188,16 @@ export default function LayoutCanvas({
   }
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (measureMode && e.button === 0) {
+      const { x, y } = getPos(e)
+      if (!measureStart) {
+        setMeasureStart({ x, y })
+        setMeasureEnd(null)
+      } else {
+        setMeasureEnd({ x, y })
+      }
+      return
+    }
     if (e.button === 1 || (e.button === 0 && space)) {
       setPanStart({ x: e.clientX, y: e.clientY })
       return
@@ -228,6 +252,10 @@ export default function LayoutCanvas({
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const { x, y } = getPos(e)
+    if (measureMode && measureStart && !measureEnd) {
+      setMeasureEnd({ x, y })
+      return
+    }
     if (panStart) {
       setOffset({ x: offset.x + (e.clientX - panStart.x), y: offset.y + (e.clientY - panStart.y) })
       setPanStart({ x: e.clientX, y: e.clientY })
@@ -720,7 +748,20 @@ export default function LayoutCanvas({
       ctx.fill()
       ctx.restore()
     }
-  }, [points, showGrid, scale, gridSpacing, elements, offset, zoom, curves, dragIndex, dragPreview])
+
+    if (measureStart && measureEnd) {
+      ctx.strokeStyle = '#d32f2f'
+      ctx.beginPath()
+      ctx.moveTo(measureStart.x, measureStart.y)
+      ctx.lineTo(measureEnd.x, measureEnd.y)
+      ctx.stroke()
+      const len = Math.hypot(measureEnd.x - measureStart.x, measureEnd.y - measureStart.y) / scale
+      ctx.fillStyle = '#d32f2f'
+      const mx = (measureStart.x + measureEnd.x) / 2
+      const my = (measureStart.y + measureEnd.y) / 2
+      ctx.fillText(len.toFixed(2) + 'm', mx + 4, my - 4)
+    }
+  }, [points, showGrid, scale, gridSpacing, elements, offset, zoom, curves, dragIndex, dragPreview, measureStart, measureEnd, measureMode])
 
   useEffect(() => {
     const closedDetected =
@@ -752,6 +793,11 @@ export default function LayoutCanvas({
         onMouseLeave={() => setHoverFirst(false)}
         onDoubleClick={handleDoubleClick}
       />
+      {measureMode && (
+        <Box sx={{ position: 'absolute', top: 8, right: 8, bgcolor: '#d32f2f', color: '#fff', px: 1, py: '2px', borderRadius: 1, fontSize: 12 }}>
+          {measureEnd ? t.measureDone : t.measureMode}
+        </Box>
+      )}
       {tooltip && (
         <Tooltip open title={tooltip.text}>
           <Box sx={{ position: 'fixed', pointerEvents: 'none', top: tooltip.y, left: tooltip.x, width: 0, height: 0 }} />
