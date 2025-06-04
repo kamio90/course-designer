@@ -364,24 +364,7 @@ export default function LayoutCanvas({
       }
     }
     setContext({ type, index: idx, canvasPos: pos })
-    let ax = e.clientX
-    let ay = e.clientY
-    const rect = canvasRef.current!.getBoundingClientRect()
-    if (type === 'point' && idx >= 0) {
-      const pt = points[idx]
-      ax = rect.left + offset.x + pt.x * zoom
-      ay = rect.top + offset.y + pt.y * zoom
-    } else if (type === 'line' && idx >= 0) {
-      const p1 = points[idx]
-      const p2 = points[idx + 1]
-      ax = rect.left + offset.x + ((p1.x + p2.x) / 2) * zoom
-      ay = rect.top + offset.y + ((p1.y + p2.y) / 2) * zoom
-    } else if (type === 'element' && idx >= 0) {
-      const el = elements[idx]
-      ax = rect.left + offset.x + el.x * zoom
-      ay = rect.top + offset.y + el.y * zoom
-    }
-    setAnchor({ x: ax, y: ay })
+    setAnchor({ x: e.clientX, y: e.clientY })
   }
 
   const createPoint = () => {
@@ -759,7 +742,10 @@ export default function LayoutCanvas({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onContextMenu={handleContextMenu}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          handleContextMenu(e)
+        }}
         onWheel={(e) => setZoom((z) => Math.max(0.2, Math.min(3, z - e.deltaY * 0.001)))}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
