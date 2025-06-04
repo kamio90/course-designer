@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import DesignTopBar from '../components/DesignTopBar'
 import LayoutCanvas, { type Point, type ElementItem } from '../components/LayoutCanvas'
 import LayoutTools from '../components/LayoutTools'
@@ -8,6 +8,7 @@ import { useApp } from '../context/AppContext'
 
 export default function DesignView() {
   const { projectId } = useParams()
+  const navigate = useNavigate()
   const { projects } = useApp()
   const project = projects.find((p) => p.id === projectId)
   const [points, setPoints] = useState<Point[]>([])
@@ -37,7 +38,13 @@ export default function DesignView() {
         toggleAuto={() => setAutoStraight((a) => !a)}
       />
       <div className="body">
-        <LayoutTools onSave={() => alert('saved')} canSave={closed} />
+        <LayoutTools
+          onSave={() => {
+            sessionStorage.setItem(`layout_${projectId}`, JSON.stringify(points))
+            navigate(`/project/${projectId}/course`)
+          }}
+          canSave={closed}
+        />
         <main>
           <h2>{project.title}</h2>
           <LayoutCanvas
