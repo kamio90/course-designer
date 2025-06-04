@@ -1,5 +1,6 @@
 import type { FC, ReactNode } from 'react'
 import { Button } from '@mui/material'
+import GoogleIcon from '@mui/icons-material/Google'
 
 interface Props {
   onAuth: () => void
@@ -11,8 +12,10 @@ const GoogleAuthButton: FC<Props> = ({ onAuth, children }) => (
     type="button"
     onClick={onAuth}
     aria-label="google auth"
-    variant="outlined"
-    sx={{ mt: 2 }}
+    variant="contained"
+    color="error"
+    startIcon={<GoogleIcon />}
+    sx={{ mt: 2, textTransform: 'none' }}
     fullWidth
   >
     {children || 'Continue with Google (mock)'}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Container,
+  Box,
   Paper,
   Stack,
   Typography,
@@ -9,14 +9,19 @@ import {
   Button,
   IconButton,
   InputAdornment,
+  Divider,
+  useTheme,
 } from '@mui/material'
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
+import lightLogo from '../assets/logo-light.svg'
+import darkLogo from '../assets/logo-dark.svg'
 import { login as apiLogin } from '../api/fakeApi'
 import { useApp } from '../context/AppContext'
 import GoogleAuthButton from '../components/GoogleAuthButton'
+import FacebookAuthButton from '../components/FacebookAuthButton'
 import { translations } from '../i18n'
 
 interface FormInputs {
@@ -28,6 +33,8 @@ export default function LoginView() {
   const { login, lang } = useApp()
   const navigate = useNavigate()
   const t = translations[lang]
+  const theme = useTheme()
+  const logo = theme.palette.mode === 'dark' ? darkLogo : lightLogo
   const [showPwd, setShowPwd] = useState(false)
 
   const schema = yup.object({
@@ -57,10 +64,29 @@ export default function LoginView() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Paper sx={{ p: 4 }} component="form" onSubmit={handleSubmit(onSubmit)}>
-        <Stack spacing={2}>
-          <Typography variant="h4" component="h1" textAlign="center">
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+      }}
+    >
+      <Paper
+        sx={{ p: 4, width: '100%', maxWidth: 420, borderRadius: 2 }}
+        component="form"
+        onSubmit={handleSubmit(onSubmit)}
+        elevation={3}
+      >
+        <Stack spacing={2} alignItems="center">
+          <Stack direction="row" spacing={1} alignItems="center">
+            <img src={logo} alt={t.appName} width={40} height={40} />
+            <Typography variant="h6" component="span">
+              {t.appName}
+            </Typography>
+          </Stack>
+          <Typography variant="h5" component="h1">
             {t.loginTitle}
           </Typography>
           <TextField
@@ -90,9 +116,19 @@ export default function LoginView() {
               ),
             }}
           />
+          <Box sx={{ alignSelf: 'flex-end' }}>
+            <Button variant="text" size="small">
+              {t.forgotPassword}
+            </Button>
+          </Box>
           <Button type="submit" variant="contained" disabled={isSubmitting}>
             {t.login}
           </Button>
+          <Divider flexItem sx={{ width: '100%' }}>
+            <Typography variant="body2" color="text.secondary">
+              {t.orLoginWith}
+            </Typography>
+          </Divider>
           <GoogleAuthButton
             onAuth={() => {
               alert(t.googleMock)
@@ -100,8 +136,22 @@ export default function LoginView() {
           >
             {t.googleSignIn}
           </GoogleAuthButton>
+          <FacebookAuthButton
+            onAuth={() => {
+              alert(t.facebookMock)
+            }}
+          >
+            {t.facebookSignIn}
+          </FacebookAuthButton>
+          <Button
+            variant="text"
+            onClick={() => navigate('/register')}
+            sx={{ mt: 1 }}
+          >
+            {t.registerLink}
+          </Button>
         </Stack>
       </Paper>
-    </Container>
+    </Box>
   )
 }
