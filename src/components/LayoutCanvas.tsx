@@ -79,16 +79,43 @@ export default function LayoutCanvas({
   const [hoverFirst, setHoverFirst] = useState(false)
   const [closed, setClosed] = useState(false)
 
+  const centerView = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    if (!points.length) {
+      setOffset({ x: 0, y: 0 })
+      setZoom(1)
+      return
+    }
+    const pts = closed ? points.slice(0, -1) : points
+    const minX = Math.min(...pts.map((p) => p.x))
+    const maxX = Math.max(...pts.map((p) => p.x))
+    const minY = Math.min(...pts.map((p) => p.y))
+    const maxY = Math.max(...pts.map((p) => p.y))
+    const pad = 40
+    const w = maxX - minX || 1
+    const h = maxY - minY || 1
+    const zoomVal = Math.min(
+      canvas.width / (w + pad),
+      canvas.height / (h + pad),
+    )
+    setZoom(Math.min(3, zoomVal))
+    setOffset({
+      x: canvas.width / 2 - ((minX + maxX) / 2) * zoomVal,
+      y: canvas.height / 2 - ((minY + maxY) / 2) * zoomVal,
+    })
+  }
+
   useEffect(() => {
     const keyHandler = (ev: KeyboardEvent) => {
       if (ev.key.toLowerCase() === 'f') {
-        setOffset({ x: 0, y: 0 })
-        setZoom(1)
+        ev.preventDefault()
+        centerView()
       }
     }
     window.addEventListener('keydown', keyHandler)
     return () => window.removeEventListener('keydown', keyHandler)
-  }, [setOffset, setZoom])
+  }, [points, closed])
 
   const isClosed = () => closed
 
@@ -370,6 +397,61 @@ export default function LayoutCanvas({
     setContext(null)
   }
 
+  const editLineLength = (idx: number) => {
+    const p1 = points[idx]
+    const p2 = points[idx + 1]
+    const current = Math.hypot(p2.x - p1.x, p2.y - p1.y) / scale
+    const input = prompt(t.editLength, current.toFixed(2))
+    if (!input) {
+      setContext(null)
+      return
+    }
+    const val = parseFloat(input)
+    if (Number.isNaN(val) || val <= 0) {
+      setContext(null)
+      return
+    }
+    const factor = (val * scale) / Math.hypot(p2.x - p1.x, p2.y - p1.y)
+    const nx = p1.x + (p2.x - p1.x) * factor
+    const ny = p1.y + (p2.y - p1.y) * factor
+    const list = points.map((p, i) => {
+      if (i === idx + 1) return { ...p, x: nx, y: ny }
+      if (isClosed() && idx === points.length - 2 && i === 0) {
+        return { ...p, x: nx, y: ny }
+      }
+      return p
+    })
+    setPoints(list)
+    setContext(null)
+  }
+
+  const straightenEdge = (idx: number) => {
+    const p1 = points[idx]
+    const p2 = points[idx + 1]
+    const dx = p2.x - p1.x
+    const dy = p2.y - p1.y
+    let nx = p2.x
+    let ny = p2.y
+    if (Math.abs(dx) > Math.abs(dy)) {
+      ny = p1.y
+    } else {
+      nx = p1.x
+    }
+    if (snap) {
+      nx = Math.round(nx / gridSpacing) * gridSpacing
+      ny = Math.round(ny / gridSpacing) * gridSpacing
+    }
+    const list = points.map((p, i) => {
+      if (i === idx + 1) return { ...p, x: nx, y: ny }
+      if (isClosed() && idx === points.length - 2 && i === 0) {
+        return { ...p, x: nx, y: ny }
+      }
+      return p
+    })
+    setPoints(list)
+    setContext(null)
+  }
+
   const handleDrop = (e: React.DragEvent<HTMLCanvasElement>) => {
     const type = e.dataTransfer.getData('text/plain')
     if (!type) return
@@ -518,9 +600,13 @@ export default function LayoutCanvas({
         )}
         {context?.type === 'line' && (
           <>
+            <MenuItem onClick={() => editLineLength(context.index)}>
+              {t.editLength}
+            </MenuItem>
             <MenuItem onClick={() => insertMidpoint(context.index)}>{t.insertMidpoint}</MenuItem>
             <MenuItem onClick={() => deleteLine(context.index)}>{t.deleteLine}</MenuItem>
             <MenuItem onClick={() => toggleCurveForLine(context.index)}>{t.toggleCurve}</MenuItem>
+            <MenuItem onClick={() => straightenEdge(context.index)}>{t.straighten}</MenuItem>
           </>
         )}
       </Menu>

@@ -107,6 +107,32 @@ export default function ObstacleCanvas({
     setObstacles([...obstacles, { id: crypto.randomUUID(), type, x, y, rotation: 0 }])
   }
 
+  const centerView = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    if (!obstacles.length) {
+      setOffset({ x: 0, y: 0 })
+      setZoom(1)
+      return
+    }
+    const minX = Math.min(...obstacles.map((o) => o.x))
+    const maxX = Math.max(...obstacles.map((o) => o.x))
+    const minY = Math.min(...obstacles.map((o) => o.y))
+    const maxY = Math.max(...obstacles.map((o) => o.y))
+    const pad = 40
+    const w = maxX - minX || 1
+    const h = maxY - minY || 1
+    const zoomVal = Math.min(
+      canvas.width / (w + pad),
+      canvas.height / (h + pad),
+    )
+    setZoom(Math.min(3, zoomVal))
+    setOffset({
+      x: canvas.width / 2 - ((minX + maxX) / 2) * zoomVal,
+      y: canvas.height / 2 - ((minY + maxY) / 2) * zoomVal,
+    })
+  }
+
   useEffect(() => {
     const keyHandler = (ev: KeyboardEvent) => {
       const k = ev.key.toLowerCase()
@@ -117,13 +143,13 @@ export default function ObstacleCanvas({
           ),
         )
       } else if (k === 'f') {
-        setOffset({ x: 0, y: 0 })
-        setZoom(1)
+        ev.preventDefault()
+        centerView()
       }
     }
     window.addEventListener('keydown', keyHandler)
     return () => window.removeEventListener('keydown', keyHandler)
-  }, [dragId, setObstacles, setOffset, setZoom])
+  }, [dragId, obstacles])
 
   useEffect(() => {
     const canvas = canvasRef.current!
