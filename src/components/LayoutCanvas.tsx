@@ -21,6 +21,8 @@ export interface ElementItem {
   x: number
   y: number
   rotation: number
+  w: number
+  h: number
 }
 
 export interface Point {
@@ -461,7 +463,10 @@ export default function LayoutCanvas({
     const type = e.dataTransfer.getData('text/plain')
     if (!type) return
     const { x, y } = getPos(e)
-    setElements([...elements, { id: crypto.randomUUID(), type, x, y, rotation: 0 }])
+    setElements([
+      ...elements,
+      { id: crypto.randomUUID(), type, x, y, rotation: 0, w: 30, h: 30 },
+    ])
   }
 
   useEffect(() => {
@@ -535,45 +540,45 @@ export default function LayoutCanvas({
         case 'water':
           ctx.fillStyle = '#64b5f6'
           ctx.beginPath()
-          ctx.ellipse(0, 0, 15, 10, 0, 0, Math.PI * 2)
+          ctx.ellipse(0, 0, el.w / 2, el.h / 2, 0, 0, Math.PI * 2)
           ctx.fill()
           break
         case 'grass':
           ctx.fillStyle = '#81c784'
-          ctx.fillRect(-20, -10, 40, 20)
+          ctx.fillRect(-el.w / 2, -el.h / 2, el.w, el.h)
           break
         case 'entrance':
           ctx.fillStyle = '#ffb74d'
           ctx.beginPath()
-          ctx.moveTo(-10, -10)
-          ctx.lineTo(10, 0)
-          ctx.lineTo(-10, 10)
+          ctx.moveTo(-el.w / 2, -el.h / 2)
+          ctx.lineTo(el.w / 2, 0)
+          ctx.lineTo(-el.w / 2, el.h / 2)
           ctx.closePath()
           ctx.fill()
           break
         case 'exit':
           ctx.fillStyle = '#f06292'
           ctx.beginPath()
-          ctx.moveTo(10, -10)
-          ctx.lineTo(-10, 0)
-          ctx.lineTo(10, 10)
+          ctx.moveTo(el.w / 2, -el.h / 2)
+          ctx.lineTo(-el.w / 2, 0)
+          ctx.lineTo(el.w / 2, el.h / 2)
           ctx.closePath()
           ctx.fill()
           break
         case 'gazebo':
           ctx.fillStyle = '#8d6e63'
-          ctx.fillRect(-12, -12, 24, 12)
+          ctx.fillRect(-el.w / 2, -el.h / 2, el.w, el.h / 2)
           ctx.fillStyle = '#bcaaa4'
           ctx.beginPath()
-          ctx.moveTo(-14, -12)
-          ctx.lineTo(0, -20)
-          ctx.lineTo(14, -12)
+          ctx.moveTo(-el.w / 2 - 2, -el.h / 2)
+          ctx.lineTo(0, -el.h)
+          ctx.lineTo(el.w / 2 + 2, -el.h / 2)
           ctx.closePath()
           ctx.fill()
           break
         default:
           ctx.fillStyle = 'orange'
-          ctx.fillRect(-10, -10, 20, 20)
+          ctx.fillRect(-el.w / 2, -el.h / 2, el.w, el.h)
       }
       ctx.fillStyle = 'black'
       ctx.fillText(String(idx + 1), 12, 0)

@@ -7,6 +7,8 @@ export interface Obstacle {
   x: number
   y: number
   rotation: number
+  w: number
+  h: number
 }
 
 export interface Connection {
@@ -41,6 +43,7 @@ export default function ObstacleCanvas({
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [connectSel, setConnectSel] = useState<string | null>(null)
+  const [resize, setResize] = useState<{ id: string; dir: 'n' | 's' | 'e' | 'w' } | null>(null)
 
   const getPos = (e: { clientX: number; clientY: number; shiftKey: boolean }) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -64,7 +67,20 @@ export default function ObstacleCanvas({
     }
     const { x, y } = getPos(e)
     for (const o of obstacles) {
-      if (x >= o.x - 15 && x <= o.x + 15 && y >= o.y - 15 && y <= o.y + 15) {
+      const handles = {
+        e: { x: o.x + o.w / 2, y: o.y },
+        w: { x: o.x - o.w / 2, y: o.y },
+        n: { x: o.x, y: o.y - o.h / 2 },
+        s: { x: o.x, y: o.y + o.h / 2 },
+      }
+      for (const dir of ['e', 'w', 'n', 's'] as const) {
+        const h = handles[dir]
+        if (Math.hypot(x - h.x, y - h.y) < 6) {
+          setResize({ id: o.id, dir })
+          return
+        }
+      }
+      if (x >= o.x - o.w / 2 && x <= o.x + o.w / 2 && y >= o.y - o.h / 2 && y <= o.y + o.h / 2) {
         if (connectMode) {
           if (connectSel) {
             setConnections([...connections, { from: connectSel, to: o.id }])
@@ -89,7 +105,26 @@ export default function ObstacleCanvas({
       setPanStart({ x: e.clientX, y: e.clientY })
       return
     }
-    if (dragId) {
+    if (resize) {
+      const { x, y } = getPos(e)
+      setObstacles(
+        obstacles.map((o) => {
+          if (o.id !== resize.id) return o
+          switch (resize.dir) {
+            case 'e':
+              return { ...o, w: Math.max(20, (x - o.x) * 2) }
+            case 'w':
+              return { ...o, w: Math.max(20, (o.x - x) * 2) }
+            case 'n':
+              return { ...o, h: Math.max(20, (o.y - y) * 2) }
+            case 's':
+              return { ...o, h: Math.max(20, (y - o.y) * 2) }
+            default:
+              return o
+          }
+        }),
+      )
+    } else if (dragId) {
       const { x, y } = getPos(e)
       setObstacles(obstacles.map((o) => (o.id === dragId ? { ...o, x, y } : o)))
     }
@@ -98,13 +133,25 @@ export default function ObstacleCanvas({
   const handlePointerUp = () => {
     setDragId(null)
     setPanStart(null)
+    setResize(null)
   }
 
   const handleDrop = (e: React.DragEvent<HTMLCanvasElement>) => {
     const type = e.dataTransfer.getData('text/plain')
     if (!type) return
     const { x, y } = getPos(e)
-    setObstacles([...obstacles, { id: crypto.randomUUID(), type, x, y, rotation: 0 }])
+    setObstacles([
+      ...obstacles,
+      {
+        id: crypto.randomUUID(),
+        type,
+        x,
+        y,
+        rotation: 0,
+        w: 30,
+        h: 30,
+      },
+    ])
   }
 
   const centerView = () => {
@@ -187,9 +234,22 @@ export default function ObstacleCanvas({
       ctx.translate(o.x, o.y)
       ctx.rotate((o.rotation * Math.PI) / 180)
       ctx.fillStyle = 'orange'
-      ctx.fillRect(-15, -15, 30, 30)
+      ctx.fillRect(-o.w / 2, -o.h / 2, o.w, o.h)
       ctx.fillStyle = 'black'
-      ctx.fillText(String(idx + 1), -5, -20)
+      ctx.fillText(String(idx + 1), -5, -o.h / 2 - 5)
+      ctx.fillStyle = 'white'
+      const handles = [
+        { x: o.w / 2, y: 0 },
+        { x: -o.w / 2, y: 0 },
+        { x: 0, y: -o.h / 2 },
+        { x: 0, y: o.h / 2 },
+      ]
+      handles.forEach((h) => {
+        ctx.beginPath()
+        ctx.rect(h.x - 3, h.y - 3, 6, 6)
+        ctx.fill()
+        ctx.strokeRect(h.x - 3, h.y - 3, 6, 6)
+      })
       ctx.restore()
     })
 
