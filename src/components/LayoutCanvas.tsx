@@ -15,6 +15,7 @@ import {
 import { useApp } from '../context/AppContext'
 import { translations } from '../i18n'
 import { matchShortcut } from '../utils/shortcuts'
+import useMultiTouch from '../hooks/useMultiTouch'
 
 export interface ElementItem {
   id: string
@@ -48,6 +49,10 @@ interface Props {
   setElements: (e: ElementItem[]) => void
   measureMode: boolean
   onMeasureToggle?: () => void
+  onUndo?: () => void
+  onRedo?: () => void
+  activeTool?: string | null
+  onToolUsed?: () => void
 }
 
 interface ContextTarget {
@@ -58,6 +63,7 @@ interface ContextTarget {
 
 export interface LayoutCanvasHandle {
   center: () => void
+  clientToCanvas: (x: number, y: number) => { x: number; y: number }
 }
 
 const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas(
@@ -73,6 +79,10 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
   setElements,
   measureMode,
   onMeasureToggle,
+  onUndo,
+  onRedo,
+  activeTool,
+  onToolUsed,
 }: Props) {
   const { lang, shortcuts } = useApp()
   const t = translations[lang]
@@ -142,7 +152,21 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
     })
   }
 
-  useImperativeHandle(ref, () => ({ center: centerView }))
+  useImperativeHandle(ref, () => ({
+    center: centerView,
+    clientToCanvas: (x: number, y: number) => {
+      const rect = canvasRef.current!.getBoundingClientRect()
+      const scaleX = canvasRef.current!.width / rect.width
+      const scaleY = canvasRef.current!.height / rect.height
+      let cx = (x - rect.left) * scaleX
+      let cy = (y - rect.top) * scaleY
+      cx = (cx - offset.x) / zoom
+      cy = (cy - offset.y) / zoom
+      return { x: cx, y: cy }
+    },
+  }))
+
+  useMultiTouch(canvasRef, centerView, onUndo, onRedo)
 
   useEffect(() => {
     const keyHandler = (ev: KeyboardEvent) => {
@@ -273,6 +297,15 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       } else {
         setMeasureEnd({ x, y })
       }
+      return
+    }
+    if (activeTool && e.pointerType === 'touch') {
+      const { x, y } = getPos(e)
+      setElements([
+        ...elements,
+        { id: crypto.randomUUID(), type: activeTool, x, y, rotation: 0, w: 30, h: 30 },
+      ])
+      onToolUsed?.()
       return
     }
     if (e.button === 1 || (e.button === 0 && space)) {

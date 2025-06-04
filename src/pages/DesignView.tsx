@@ -44,6 +44,7 @@ export default function DesignView() {
   const [snap, setSnap] = useState(false)
   const [autoStraight, setAutoStraight] = useState(false)
   const [measureMode, setMeasureMode] = useState(false)
+  const [touchTool, setTouchTool] = useState<string | null>(null)
 
 
   // restore autosaved layout on mount
@@ -205,6 +206,8 @@ export default function DesignView() {
           onToggleMeasure={() => setMeasureMode((m) => !m)}
           measureMode={measureMode}
           canSave={validPolygon}
+          onSelectTool={setTouchTool}
+          activeTool={touchTool}
         />
         <main>
           <h2>{project.title}</h2>
@@ -217,11 +220,21 @@ export default function DesignView() {
             gridSpacing={gridSpacing}
             snap={snap}
             autoStraight={autoStraight}
-            elements={elements}
-            setElements={setElements}
-            measureMode={measureMode}
-            onMeasureToggle={() => setMeasureMode((m) => !m)}
-          />
+          elements={elements}
+          setElements={setElements}
+          measureMode={measureMode}
+          onMeasureToggle={() => setMeasureMode((m) => !m)}
+          onUndo={() => {
+            undoPts()
+            undoEls()
+          }}
+          onRedo={() => {
+            redoPts()
+            redoEls()
+          }}
+          activeTool={touchTool}
+          onToolUsed={() => setTouchTool(null)}
+        />
         </main>
         <LayoutStats points={points} scale={scale} elements={elements} />
         <HistoryPanel history={pointsHistory.history()} jump={pointsHistory.go} />

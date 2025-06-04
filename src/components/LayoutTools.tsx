@@ -34,6 +34,8 @@ interface Props {
   onToggleMeasure: () => void
   measureMode: boolean
   canSave: boolean
+  onSelectTool?: (type: string | null) => void
+  activeTool?: string | null
 }
 
 export default function LayoutTools({
@@ -50,6 +52,8 @@ export default function LayoutTools({
   onToggleMeasure,
   measureMode,
   canSave,
+  onSelectTool,
+  activeTool,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const { lang } = useApp()
@@ -141,6 +145,13 @@ export default function LayoutTools({
                 draggable
                 onDragStart={(e) => e.dataTransfer.setData('text/plain', item.key)}
                 button
+                selected={activeTool === item.key}
+                onPointerDown={(e) => {
+                  if (e.pointerType === 'touch') {
+                    e.preventDefault()
+                    onSelectTool?.(activeTool === item.key ? null : item.key)
+                  }
+                }}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.label} />
