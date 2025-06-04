@@ -144,6 +144,15 @@ export default function DesignView() {
             a.download = 'layout.json'
             a.click()
           }}
+          onExportPNG={() => {
+            const canvas = document.querySelector('canvas') as HTMLCanvasElement
+            if (canvas) {
+              const a = document.createElement('a')
+              a.href = canvas.toDataURL('image/png')
+              a.download = 'layout.png'
+              a.click()
+            }
+          }}
           onToggleMeasure={() => setMeasureMode((m) => !m)}
           measureMode={measureMode}
           canSave={validPolygon}

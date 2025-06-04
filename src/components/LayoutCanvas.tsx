@@ -86,6 +86,7 @@ export default function LayoutCanvas({
   const [hoverFirst, setHoverFirst] = useState(false)
   const [closed, setClosed] = useState(false)
   const [radiusIndex, setRadiusIndex] = useState<number | null>(null)
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
   const [space, setSpace] = useState(false)
   const [measureStart, setMeasureStart] = useState<{ x: number; y: number } | null>(null)
   const [measureEnd, setMeasureEnd] = useState<{ x: number; y: number } | null>(null)
@@ -143,6 +144,33 @@ export default function LayoutCanvas({
         ev.preventDefault()
         setPoints([...points, { ...points[0] }])
         setClosed(true)
+      } else if (
+        ['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k) &&
+        selectedIdx !== null
+      ) {
+        ev.preventDefault()
+        const delta = ev.shiftKey ? 10 : 1
+        const dx = k === 'arrowright' ? delta : k === 'arrowleft' ? -delta : 0
+        const dy = k === 'arrowdown' ? delta : k === 'arrowup' ? -delta : 0
+        setPoints(
+          points.map((p, i) =>
+            i === selectedIdx || (isClosed() && selectedIdx === 0 && i === points.length - 1)
+              ? { ...p, x: p.x + dx, y: p.y + dy }
+              : p,
+          ),
+        )
+      } else if (k === 'delete' || k === 'backspace') {
+        if (selectedIdx !== null) {
+          ev.preventDefault()
+          removePoint(selectedIdx)
+          setSelectedIdx(null)
+        }
+      } else if (k === 'tab') {
+        if (!points.length) return
+        ev.preventDefault()
+        const dir = ev.shiftKey ? -1 : 1
+        const next = selectedIdx === null ? 0 : (selectedIdx + dir + points.length) % points.length
+        setSelectedIdx(next)
       } else if (ev.code === 'Space') {
         setSpace(true)
       }
@@ -156,7 +184,7 @@ export default function LayoutCanvas({
       window.removeEventListener('keydown', keyHandler)
       window.removeEventListener('keyup', upHandler)
     }
-  }, [points, closed])
+  }, [points, closed, selectedIdx])
 
   const isClosed = () => closed
 
@@ -223,6 +251,7 @@ export default function LayoutCanvas({
       return
     }
     const { x, y } = getPos(e)
+    setSelectedIdx(null)
     for (let i = points.length - 1; i >= 0; i--) {
       const p = points[i]
       if (Math.hypot(p.x - x, p.y - y) < 8) {
@@ -239,6 +268,7 @@ export default function LayoutCanvas({
         }
         cancelLongPress()
         setDragIndex(i)
+        setSelectedIdx(i)
         return
       }
     }
@@ -246,6 +276,7 @@ export default function LayoutCanvas({
       if (x >= el.x - 10 && x <= el.x + 10 && y >= el.y - 10 && y <= el.y + 10) {
         cancelLongPress()
         setDragEl(el.id)
+        setSelectedIdx(null)
         return
       }
     }
@@ -272,6 +303,7 @@ export default function LayoutCanvas({
       }
     }
     setPoints([...points, { id: crypto.randomUUID(), x: nx, y: ny, radius: 0 }])
+    setSelectedIdx(points.length)
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -367,6 +399,7 @@ export default function LayoutCanvas({
   }
 
   const handlePointerUp = () => {
+    if (dragIndex !== null) setSelectedIdx(dragIndex)
     setDragIndex(null)
     setDragEl(null)
     setPanStart(null)
@@ -400,6 +433,7 @@ export default function LayoutCanvas({
       if (Math.hypot(p.x - pos.x, p.y - pos.y) < 8) {
         type = 'point'
         idx = i
+        setSelectedIdx(i)
         break
       }
     }
@@ -470,6 +504,7 @@ export default function LayoutCanvas({
       }
     }
     setPoints(points.filter((_, i) => i !== idx))
+    setSelectedIdx(null)
     setContext(null)
   }
 
@@ -490,6 +525,7 @@ export default function LayoutCanvas({
     const list = [...points]
     list.splice(after ? idx + 1 : idx, 0, newPoint)
     setPoints(list)
+    setSelectedIdx(after ? idx + 1 : idx)
     setContext(null)
   }
 
@@ -709,7 +745,12 @@ export default function LayoutCanvas({
       ctx.beginPath()
       let radius = dragIndex === i ? 7 : 5
       if (!isClosed() && i === 0 && hoverFirst) radius = 7
-      ctx.fillStyle = dragIndex === i || (!isClosed() && i === 0 && hoverFirst) ? 'orange' : 'red'
+      ctx.fillStyle =
+        selectedIdx === i
+          ? '#1fa870'
+          : dragIndex === i || (!isClosed() && i === 0 && hoverFirst)
+          ? 'orange'
+          : 'red'
       ctx.arc(p.x, p.y, radius, 0, Math.PI * 2)
       ctx.fill()
       const label = p.label ?? String(i + 1)

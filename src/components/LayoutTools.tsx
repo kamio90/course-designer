@@ -25,6 +25,7 @@ interface Props {
   onClear: () => void
   onImport: (data: File) => void
   onExport: () => void
+  onExportPNG: () => void
   onToggleMeasure: () => void
   measureMode: boolean
   canSave: boolean
@@ -35,6 +36,7 @@ export default function LayoutTools({
   onClear,
   onImport,
   onExport,
+  onExportPNG,
   onToggleMeasure,
   measureMode,
   canSave,
@@ -95,6 +97,9 @@ export default function LayoutTools({
           </Button>
           <Button onClick={onExport} fullWidth sx={{ mb: 1 }}>
             {t.exportLayout}
+          </Button>
+          <Button onClick={onExportPNG} fullWidth sx={{ mb: 1 }}>
+            {t.exportPNG}
           </Button>
           <Button
             onClick={onToggleMeasure}
