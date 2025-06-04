@@ -37,6 +37,7 @@ interface Props {
   setPoints: (p: Point[]) => void
   showGrid: boolean
   scale: number
+  gridSpacing: number
   snap: boolean
   autoStraight: boolean
   elements: ElementItem[]
@@ -54,6 +55,7 @@ export default function LayoutCanvas({
   setPoints,
   showGrid,
   scale,
+  gridSpacing,
   snap,
   autoStraight,
   elements,
@@ -80,8 +82,8 @@ export default function LayoutCanvas({
     let y = (e.clientY - rect.top - offset.y) / zoom
     const snapActive = snap || e.shiftKey
     if (snapActive) {
-      x = Math.round(x / 50) * 50
-      y = Math.round(y / 50) * 50
+      x = Math.round(x / gridSpacing) * gridSpacing
+      y = Math.round(y / gridSpacing) * gridSpacing
     }
     return { x, y }
   }
@@ -200,7 +202,20 @@ export default function LayoutCanvas({
       }
     }
     setContext({ type, index: idx, canvasPos: pos })
-    setAnchor({ x: e.clientX, y: e.clientY })
+    let ax = e.clientX
+    let ay = e.clientY
+    const rect = canvasRef.current!.getBoundingClientRect()
+    if (type === 'point' && idx >= 0) {
+      const pt = points[idx]
+      ax = rect.left + offset.x + pt.x * zoom
+      ay = rect.top + offset.y + pt.y * zoom
+    } else if (type === 'line' && idx >= 0) {
+      const p1 = points[idx]
+      const p2 = points[idx + 1]
+      ax = rect.left + offset.x + ((p1.x + p2.x) / 2) * zoom
+      ay = rect.top + offset.y + ((p1.y + p2.y) / 2) * zoom
+    }
+    setAnchor({ x: ax, y: ay })
   }
 
   const createPoint = () => {
@@ -237,8 +252,8 @@ export default function LayoutCanvas({
 
   const toggleSnapPoint = (idx: number) => {
     const p = points[idx]
-    const nx = Math.round(p.x / 50) * 50
-    const ny = Math.round(p.y / 50) * 50
+    const nx = Math.round(p.x / gridSpacing) * gridSpacing
+    const ny = Math.round(p.y / gridSpacing) * gridSpacing
     setPoints(points.map((pt, i) => (i === idx ? { ...pt, x: nx, y: ny } : pt)))
     setContext(null)
   }
@@ -290,17 +305,18 @@ export default function LayoutCanvas({
     ctx.setTransform(zoom, 0, 0, zoom, offset.x, offset.y)
 
     if (showGrid) {
-      ctx.strokeStyle = '#eee'
-      for (let i = 0; i <= canvas.width; i += 50) {
+      for (let i = 0; i <= canvas.width; i += gridSpacing) {
         ctx.beginPath()
         ctx.moveTo(i, 0)
         ctx.lineTo(i, canvas.height)
+        ctx.strokeStyle = (i / gridSpacing) % 5 === 0 ? '#ccc' : '#eee'
         ctx.stroke()
       }
-      for (let j = 0; j <= canvas.height; j += 50) {
+      for (let j = 0; j <= canvas.height; j += gridSpacing) {
         ctx.beginPath()
         ctx.moveTo(0, j)
         ctx.lineTo(canvas.width, j)
+        ctx.strokeStyle = (j / gridSpacing) % 5 === 0 ? '#ccc' : '#eee'
         ctx.stroke()
       }
     }
@@ -323,13 +339,15 @@ export default function LayoutCanvas({
       ctx.stroke()
     }
 
-    ctx.fillStyle = 'red'
     ctx.font = '12px sans-serif'
     points.forEach((p, i) => {
       ctx.beginPath()
-      ctx.arc(p.x, p.y, 5, 0, Math.PI * 2)
+      const radius = dragIndex === i ? 7 : 5
+      ctx.fillStyle = dragIndex === i ? 'orange' : 'red'
+      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2)
       ctx.fill()
       const label = p.label ?? String(i + 1)
+      ctx.fillStyle = 'black'
       ctx.fillText(label, p.x + 6, p.y - 6)
     })
 
@@ -351,7 +369,7 @@ export default function LayoutCanvas({
       ctx.fillText(String(idx + 1), 12, 0)
       ctx.restore()
     })
-  }, [points, showGrid, scale, elements, offset, zoom, curves])
+  }, [points, showGrid, scale, gridSpacing, elements, offset, zoom, curves, dragIndex])
 
   return (
     <Box sx={{ position: 'relative' }}>

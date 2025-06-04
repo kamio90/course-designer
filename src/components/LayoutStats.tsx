@@ -42,7 +42,8 @@ export default function LayoutStats({ points, scale }: Props) {
       }
       area = Math.abs(area / 2)
     }
-    return { length, closed, area }
+    const edges = points.length > 1 ? points.length - 1 : 0
+    return { length, closed, area, edges }
   }, [points])
 
   const width = collapsed ? 40 : 240
@@ -73,7 +74,10 @@ export default function LayoutStats({ points, scale }: Props) {
             <ListItemText primary={`${t.totalPoints}: ${points.length}`} />
           </ListItem>
           <ListItem>
-            <ListItemText primary={`${t.totalLength}: ${(stats.length / scale).toFixed(2)} m`} />
+            <ListItemText primary={`${t.perimeter}: ${(stats.length / scale).toFixed(2)} m`} />
+          </ListItem>
+          <ListItem>
+            <ListItemText primary={`${t.totalEdges}: ${stats.edges}`} />
           </ListItem>
           <ListItem>
             <ListItemText primary={`${t.area}: ${(stats.area / (scale * scale)).toFixed(2)} m²`} />

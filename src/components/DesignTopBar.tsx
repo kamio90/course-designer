@@ -9,6 +9,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Select,
+  MenuItem,
 } from '@mui/material'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import GridOnIcon from '@mui/icons-material/GridOn'
@@ -22,6 +24,8 @@ interface Props {
   toggleGrid: () => void
   scale: number
   toggleScale: () => void
+  gridSpacing: number
+  setGridSpacing: (v: number) => void
   snap: boolean
   toggleSnap: () => void
   autoStraight: boolean
@@ -33,6 +37,8 @@ export default function DesignTopBar({
   toggleGrid,
   scale,
   toggleScale,
+  gridSpacing,
+  setGridSpacing,
   snap,
   toggleSnap,
   autoStraight,
@@ -51,6 +57,18 @@ export default function DesignTopBar({
         <IconButton color="inherit" onClick={toggleScale} aria-label={t.toggleScale}>
           <StraightenIcon />
         </IconButton>
+        <Select
+          value={gridSpacing}
+          onChange={(e) => setGridSpacing(Number(e.target.value))}
+          size="small"
+          aria-label={t.gridSpacing}
+          sx={{ mr: 2, ml: 1, color: 'inherit' }}
+        >
+          <MenuItem value={20}>20</MenuItem>
+          <MenuItem value={40}>40</MenuItem>
+          <MenuItem value={50}>50</MenuItem>
+          <MenuItem value={80}>80</MenuItem>
+        </Select>
         <IconButton color="inherit" onClick={toggleGrid} aria-label={showGrid ? t.gridOff : t.gridOn}>
           {showGrid ? <GridOffIcon /> : <GridOnIcon />}
         </IconButton>
@@ -75,9 +93,8 @@ export default function DesignTopBar({
       <Dialog open={helpVisible} onClose={() => setHelpVisible(false)}>
         <DialogTitle>{t.help}</DialogTitle>
         <DialogContent>
-          <Typography variant="body2">
-            Left click to add point, drag to move. Hold Shift while dragging to snap to grid.
-            Right click a point for options. Use the middle mouse button to pan and the wheel to zoom.
+          <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-line' }}>
+            {`Left click — add/move points\nShift + drag — snap to grid\nMiddle mouse — pan\nWheel — zoom\nRight click — context actions\nR — rotate obstacle\nF — center view`}
           </Typography>
         </DialogContent>
         <DialogActions>

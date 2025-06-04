@@ -15,6 +15,7 @@ export default function DesignView() {
   const [elements, setElements] = useState<ElementItem[]>([])
   const [showGrid, setShowGrid] = useState(true)
   const [scale, setScale] = useState(10)
+  const [gridSpacing, setGridSpacing] = useState(50)
   const [snap, setSnap] = useState(false)
   const [autoStraight, setAutoStraight] = useState(false)
 
@@ -32,6 +33,8 @@ export default function DesignView() {
         toggleGrid={() => setShowGrid((g) => !g)}
         scale={scale}
         toggleScale={toggleScale}
+        gridSpacing={gridSpacing}
+        setGridSpacing={setGridSpacing}
         snap={snap}
         toggleSnap={() => setSnap((s) => !s)}
         autoStraight={autoStraight}
@@ -52,6 +55,7 @@ export default function DesignView() {
             setPoints={setPoints}
             showGrid={showGrid}
             scale={scale}
+            gridSpacing={gridSpacing}
             snap={snap}
             autoStraight={autoStraight}
             elements={elements}
