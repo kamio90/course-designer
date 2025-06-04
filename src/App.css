@@ -1,10 +1,18 @@
-body[data-theme='dark'] {
-  background: #222;
-  color: #eee;
+body {
+  background: var(--bg);
+  color: var(--text);
 }
 body[data-theme='light'] {
-  background: #fff;
-  color: #000;
+  --bg: #fff;
+  --text: #000;
+}
+body[data-theme='dark'] {
+  --bg: #222;
+  --text: #eee;
+}
+body[data-hc='true'] {
+  --bg: #000;
+  --text: #fff;
 }
 .dashboard {
   display: flex;

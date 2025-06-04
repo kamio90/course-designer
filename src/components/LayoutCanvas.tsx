@@ -14,6 +14,7 @@ import {
 } from '@mui/material'
 import { useApp } from '../context/AppContext'
 import { translations } from '../i18n'
+import { matchShortcut } from '../utils/shortcuts'
 
 export interface ElementItem {
   id: string
@@ -68,7 +69,7 @@ export default function LayoutCanvas({
   measureMode,
   onMeasureToggle,
 }: Props) {
-  const { lang } = useApp()
+  const { lang, shortcuts } = useApp()
   const t = translations[lang]
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -129,10 +130,10 @@ export default function LayoutCanvas({
   useEffect(() => {
     const keyHandler = (ev: KeyboardEvent) => {
       const k = ev.key.toLowerCase()
-      if (k === 'f') {
+      if (matchShortcut(ev, shortcuts.center)) {
         ev.preventDefault()
         centerView()
-      } else if (k === 'm') {
+      } else if (matchShortcut(ev, shortcuts.measure)) {
         ev.preventDefault()
         if (onMeasureToggle) onMeasureToggle()
         setMeasureStart(null)
@@ -184,7 +185,7 @@ export default function LayoutCanvas({
       window.removeEventListener('keydown', keyHandler)
       window.removeEventListener('keyup', upHandler)
     }
-  }, [points, closed, selectedIdx])
+  }, [points, closed, selectedIdx, shortcuts])
 
   const isClosed = () => closed
 

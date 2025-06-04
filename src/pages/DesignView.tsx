@@ -8,11 +8,12 @@ import { useApp } from '../context/AppContext'
 import { translations } from '../i18n'
 import useUndoable from '../hooks/useUndoable'
 import { selfIntersects } from '../utils/geometry'
+import { matchShortcut } from '../utils/shortcuts'
 
 export default function DesignView() {
   const { projectId } = useParams()
   const navigate = useNavigate()
-  const { projects, lang } = useApp()
+  const { projects, lang, shortcuts } = useApp()
   const t = translations[lang]
   const project = projects.find((p) => p.id === projectId)
   const pointsHistory = useUndoable<Point[]>([])
@@ -76,21 +77,25 @@ export default function DesignView() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+      if (matchShortcut(e, shortcuts.undo)) {
         e.preventDefault()
         undoPts()
         undoEls()
-      } else if (e.ctrlKey && e.key.toLowerCase() === 'y') {
+      } else if (matchShortcut(e, shortcuts.redo)) {
         e.preventDefault()
         redoPts()
         redoEls()
-      } else if (e.key.toLowerCase() === 'm') {
+      } else if (matchShortcut(e, shortcuts.measure)) {
         setMeasureMode((m) => !m)
+      } else if (matchShortcut(e, shortcuts.clear)) {
+        e.preventDefault()
+        setPoints([])
+        setElements([])
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [undoPts, redoPts, undoEls, redoEls])
+  }, [undoPts, redoPts, undoEls, redoEls, shortcuts, setPoints, setElements])
 
   if (!project) return <p>Project not found</p>
 
