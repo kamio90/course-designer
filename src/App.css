@@ -1,10 +1,24 @@
-body[data-theme='dark'] {
-  background: #222;
-  color: #eee;
+body {
+  background: var(--bg);
+  color: var(--text);
+  --primary: #1565c0;
+  --highlight: #1fa870;
 }
 body[data-theme='light'] {
-  background: #fff;
-  color: #000;
+  --bg: #fff;
+  --text: #000;
+}
+body[data-theme='dark'] {
+  --bg: #222;
+  --text: #eee;
+  --primary: #90caf9;
+  --highlight: #81c784;
+}
+body[data-hc='true'] {
+  --bg: #000;
+  --text: #fff;
+  --primary: #ffab00;
+  --highlight: #ffff00;
 }
 .dashboard {
   display: flex;
@@ -87,4 +101,8 @@ main {
   margin: 0;
   background: white;
   border: 1px solid #ccc;
+}
+
+canvas:focus {
+  outline: 2px solid var(--primary);
 }

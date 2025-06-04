@@ -8,8 +8,14 @@ interface AppContextProps {
   logout: () => void
   theme: 'light' | 'dark'
   toggleTheme: () => void
+  highContrast: boolean
+  toggleContrast: () => void
+  advancedGestures: boolean
+  toggleGestures: () => void
   lang: 'en' | 'pl'
   switchLang: (lang: 'en' | 'pl') => void
+  shortcuts: Record<string, string>
+  setShortcut: (action: string, key: string) => void
   projects: Project[]
   addProject: (data: Omit<Project, 'id' | 'createdAt' | 'courses'>) => void
   deleteProject: (id: string) => void
@@ -28,6 +34,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<'en' | 'pl'>(
     () => (localStorage.getItem('lang') as 'en' | 'pl') || 'en',
   )
+  const [highContrast, setHighContrast] = useState<boolean>(() => {
+    return localStorage.getItem('highContrast') === 'true'
+  })
+  const [advancedGestures, setAdvancedGestures] = useState<boolean>(() => {
+    return localStorage.getItem('advancedGestures') !== 'false'
+  })
+  const [shortcuts, setShortcuts] = useState<Record<string, string>>(() => {
+    const raw = localStorage.getItem('shortcuts')
+    return (
+      (raw && (JSON.parse(raw) as Record<string, string>)) || {
+        undo: 'ctrl+z',
+        redo: 'ctrl+y',
+        center: 'f',
+        measure: 'm',
+        clear: 'c',
+      }
+    )
+  })
   const [projects, setProjects] = useState<Project[]>(() => {
     const raw = localStorage.getItem('projects')
     return raw ? (JSON.parse(raw) as Project[]) : []
@@ -48,9 +72,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return next
     })
   }
+  const toggleContrast = () => {
+    setHighContrast((c) => {
+      const next = !c
+      localStorage.setItem('highContrast', String(next))
+      return next
+    })
+  }
+  const toggleGestures = () => {
+    setAdvancedGestures((g) => {
+      const next = !g
+      localStorage.setItem('advancedGestures', String(next))
+      return next
+    })
+  }
   const switchLang = (l: 'en' | 'pl') => {
     setLang(l)
     localStorage.setItem('lang', l)
+  }
+
+  const setShortcut = (action: string, key: string) => {
+    setShortcuts((prev) => {
+      const next = { ...prev, [action]: key }
+      localStorage.setItem('shortcuts', JSON.stringify(next))
+      return next
+    })
   }
 
   const addProject = (data: Omit<Project, 'id' | 'createdAt' | 'courses'>) => {
@@ -77,7 +123,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.body.dataset.theme = theme
-  }, [theme])
+    document.body.dataset.hc = highContrast ? 'true' : 'false'
+  }, [theme, highContrast])
 
   return (
     <AppContext.Provider
@@ -87,8 +134,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         logout,
         theme,
         toggleTheme,
-        lang,
+        highContrast,
+      toggleContrast,
+      advancedGestures,
+      toggleGestures,
+      lang,
         switchLang,
+        shortcuts,
+        setShortcut,
         projects,
         addProject,
         deleteProject,

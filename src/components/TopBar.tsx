@@ -10,13 +10,17 @@ import {
   Button,
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
+import SettingsIcon from '@mui/icons-material/Settings'
 import { useApp } from '../context/AppContext'
 import { translations } from '../i18n'
+import PreferencesDialog from './PreferencesDialog'
 
 export default function TopBar() {
   const { user, toggleTheme, theme, lang, switchLang, logout } = useApp()
   const t = translations[lang]
   const [collapsed, setCollapsed] = useState(false)
+  const [prefsOpen, setPrefsOpen] = useState(false)
+  const [prefsOpen, setPrefsOpen] = useState(false)
 
   if (collapsed) {
     return (
@@ -69,10 +73,14 @@ export default function TopBar() {
           onChange={toggleTheme}
           inputProps={{ 'aria-label': 'theme toggle' }}
         />
+        <IconButton color="inherit" onClick={() => setPrefsOpen(true)} aria-label={t.preferences}>
+          <SettingsIcon />
+        </IconButton>
         <Button color="inherit" onClick={logout} sx={{ ml: 2 }}>
           {t.logout}
         </Button>
       </Toolbar>
+      <PreferencesDialog open={prefsOpen} onClose={() => setPrefsOpen(false)} />
     </AppBar>
   )
 }

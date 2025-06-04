@@ -11,11 +11,11 @@ import {
   DialogActions,
   Select,
   MenuItem,
+  TextField,
 } from '@mui/material'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import GridOnIcon from '@mui/icons-material/GridOn'
 import GridOffIcon from '@mui/icons-material/GridOff'
-import StraightenIcon from '@mui/icons-material/Straighten'
 import { translations } from '../i18n'
 import { useApp } from '../context/AppContext'
 
@@ -23,7 +23,7 @@ interface Props {
   showGrid: boolean
   toggleGrid: () => void
   scale: number
-  toggleScale: () => void
+  setScale: (v: number) => void
   gridSpacing: number
   setGridSpacing: (v: number) => void
   snap: boolean
@@ -36,7 +36,7 @@ export default function DesignTopBar({
   showGrid,
   toggleGrid,
   scale,
-  toggleScale,
+  setScale,
   gridSpacing,
   setGridSpacing,
   snap,
@@ -59,12 +59,14 @@ export default function DesignTopBar({
   return (
     <AppBar position="static" className="design-topbar">
       <Toolbar>
-        <Typography sx={{ flexGrow: 1 }}>
-          {scale === 10 ? '1m = 10px' : 'px'}
-        </Typography>
-        <IconButton color="inherit" onClick={toggleScale} aria-label={t.toggleScale}>
-          <StraightenIcon />
-        </IconButton>
+        <TextField
+          type="number"
+          label={t.scaleLabel}
+          value={scale}
+          onChange={(e) => setScale(Number(e.target.value))}
+          size="small"
+          sx={{ mr: 2, width: 100, input: { color: 'inherit' } }}
+        />
         <Select
           value={gridSpacing}
           onChange={(e) => setGridSpacing(Number(e.target.value))}

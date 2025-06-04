@@ -14,7 +14,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import GridOnIcon from '@mui/icons-material/GridOn'
 import GridOffIcon from '@mui/icons-material/GridOff'
 import LinkIcon from '@mui/icons-material/Link'
-import StraightenIcon from '@mui/icons-material/Straighten'
+import TextField from '@mui/material/TextField'
 import { translations } from '../i18n'
 import { useApp } from '../context/AppContext'
 
@@ -22,7 +22,7 @@ interface Props {
   showGrid: boolean
   toggleGrid: () => void
   scale: number
-  toggleScale: () => void
+  setScale: (v: number) => void
   connect: boolean
   toggleConnect: () => void
 }
@@ -31,7 +31,7 @@ export default function CourseTopBar({
   showGrid,
   toggleGrid,
   scale,
-  toggleScale,
+  setScale,
   connect,
   toggleConnect,
 }: Props) {
@@ -42,10 +42,14 @@ export default function CourseTopBar({
   return (
     <AppBar position="static">
       <Toolbar>
-        <Typography sx={{ flexGrow: 1 }}>{`1m = ${scale}px`}</Typography>
-        <IconButton color="inherit" onClick={toggleScale} aria-label={t.toggleScale}>
-          <StraightenIcon />
-        </IconButton>
+        <TextField
+          type="number"
+          label={t.scaleLabel}
+          value={scale}
+          onChange={(e) => setScale(Number(e.target.value))}
+          size="small"
+          sx={{ mr: 2, width: 100, input: { color: 'inherit' } }}
+        />
         <IconButton color="inherit" onClick={toggleGrid} aria-label={showGrid ? t.gridOff : t.gridOn}>
           {showGrid ? <GridOffIcon /> : <GridOnIcon />}
         </IconButton>

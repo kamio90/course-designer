@@ -1,32 +1,109 @@
-import { useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import DesignTopBar from '../components/DesignTopBar'
-import LayoutCanvas, { type Point, type ElementItem } from '../components/LayoutCanvas'
+import LayoutCanvas, {
+  type Point,
+  type ElementItem,
+  type LayoutCanvasHandle,
+} from '../components/LayoutCanvas'
 import LayoutTools from '../components/LayoutTools'
 import LayoutStats from '../components/LayoutStats'
+import HistoryPanel from '../components/HistoryPanel'
 import { useApp } from '../context/AppContext'
+import { translations } from '../i18n'
+import useUndoable from '../hooks/useUndoable'
+import { selfIntersects } from '../utils/geometry'
+import { matchShortcut } from '../utils/shortcuts'
 
 export default function DesignView() {
   const { projectId } = useParams()
   const navigate = useNavigate()
-  const { projects } = useApp()
+  const { projects, lang, shortcuts } = useApp()
+  const t = translations[lang]
   const project = projects.find((p) => p.id === projectId)
-  const [points, setPoints] = useState<Point[]>([])
-  const [elements, setElements] = useState<ElementItem[]>([])
+  const pointsHistory = useUndoable<Point[]>([])
+  const elementsHistory = useUndoable<ElementItem[]>([])
+  const {
+    state: points,
+    set: setPoints,
+    replace: replacePoints,
+    undo: undoPts,
+    redo: redoPts,
+  } = pointsHistory
+  const {
+    state: elements,
+    set: setElements,
+    replace: replaceElements,
+    undo: undoEls,
+    redo: redoEls,
+  } = elementsHistory
+  const canvasRef = useRef<LayoutCanvasHandle>(null)
   const [showGrid, setShowGrid] = useState(true)
   const [scale, setScale] = useState(10)
   const [gridSpacing, setGridSpacing] = useState(50)
   const [snap, setSnap] = useState(false)
   const [autoStraight, setAutoStraight] = useState(false)
+  const [measureMode, setMeasureMode] = useState(false)
+  const [touchTool, setTouchTool] = useState<string | null>(null)
 
-  if (!project) return <p>Project not found</p>
 
-  const toggleScale = () => setScale((s) => (s === 10 ? 1 : 10))
+  // restore autosaved layout on mount
+  useEffect(() => {
+    if (!projectId) return
+    const saved = localStorage.getItem(`autosave_${projectId}`)
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (parsed.points) replacePoints(parsed.points as Point[])
+        if (parsed.elements) replaceElements(parsed.elements as ElementItem[])
+        alert(t.autosaveRestored)
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [projectId])
+
+  // autosave on change
+  useEffect(() => {
+    if (!projectId) return
+    localStorage.setItem(
+      `autosave_${projectId}`,
+      JSON.stringify({ points, elements }),
+    )
+  }, [projectId, points, elements])
 
   const closed =
     points.length > 3 &&
     points[0].x === points[points.length - 1].x &&
     points[0].y === points[points.length - 1].y
+  const validPolygon =
+    closed &&
+    points.length > 3 &&
+    !selfIntersects(points.slice(0, -1))
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (matchShortcut(e, shortcuts.undo)) {
+        e.preventDefault()
+        undoPts()
+        undoEls()
+      } else if (matchShortcut(e, shortcuts.redo)) {
+        e.preventDefault()
+        redoPts()
+        redoEls()
+      } else if (matchShortcut(e, shortcuts.measure)) {
+        setMeasureMode((m) => !m)
+      } else if (matchShortcut(e, shortcuts.clear)) {
+        e.preventDefault()
+        setPoints([])
+        setElements([])
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [undoPts, redoPts, undoEls, redoEls, shortcuts, setPoints, setElements])
+
+  if (!project) return <p>Project not found</p>
 
   return (
     <div className="dashboard">
@@ -34,7 +111,7 @@ export default function DesignView() {
         showGrid={showGrid}
         toggleGrid={() => setShowGrid((g) => !g)}
         scale={scale}
-        toggleScale={toggleScale}
+        setScale={setScale}
         gridSpacing={gridSpacing}
         setGridSpacing={setGridSpacing}
         snap={snap}
@@ -45,14 +122,97 @@ export default function DesignView() {
       <div className="body">
         <LayoutTools
           onSave={() => {
+            if (!validPolygon) {
+              alert(t.invalidShape)
+              return
+            }
             sessionStorage.setItem(`layout_${projectId}`, JSON.stringify(points))
             navigate(`/project/${projectId}/course`)
           }}
-          canSave={closed}
+          onClear={() => {
+            setPoints([])
+            setElements([])
+          }}
+          onImport={(file) => {
+            const reader = new FileReader()
+            reader.onload = () => {
+              try {
+                const data = JSON.parse(reader.result as string)
+                if (data.points) replacePoints(data.points)
+                if (data.elements) replaceElements(data.elements)
+              } catch {
+                alert('Invalid file')
+              }
+            }
+            reader.readAsText(file)
+          }}
+          onExport={() => {
+            const blob = new Blob([
+              JSON.stringify({ points, elements }, null, 2),
+            ])
+            const a = document.createElement('a')
+            a.href = URL.createObjectURL(blob)
+            a.download = 'layout.json'
+            a.click()
+          }}
+          onExportSVG={() => {
+            const pts = points.map((p) => `${p.x},${p.y}`).join(' ')
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1500">`
+            if (points.length)
+              svg += `<polygon points="${pts}" fill="none" stroke="black" />`
+            elements.forEach((el) => {
+              svg += `<rect x="${el.x - el.w / 2}" y="${el.y - el.h / 2}" width="${el.w}" height="${el.h}" fill="orange" stroke="black" />`
+            })
+            svg += `</svg>`
+            const blob = new Blob([svg], { type: 'image/svg+xml' })
+            const a = document.createElement('a')
+            a.href = URL.createObjectURL(blob)
+            a.download = 'layout.svg'
+            a.click()
+          }}
+          onExportData={() => {
+            const data = {
+              points,
+              elements,
+              scale,
+              gridSpacing,
+            }
+            const blob = new Blob([JSON.stringify(data, null, 2)])
+            const a = document.createElement('a')
+            a.href = URL.createObjectURL(blob)
+            a.download = 'course_data.json'
+            a.click()
+          }}
+          onExportPNG={() => {
+            const canvas = document.querySelector('canvas') as HTMLCanvasElement
+            if (canvas) {
+              const a = document.createElement('a')
+              a.href = canvas.toDataURL('image/png')
+              a.download = 'layout.png'
+              a.click()
+            }
+          }}
+          onUndo={() => {
+            undoPts()
+            undoEls()
+          }}
+          onRedo={() => {
+            redoPts()
+            redoEls()
+          }}
+          onCenter={() => {
+            canvasRef.current?.center()
+          }}
+          onToggleMeasure={() => setMeasureMode((m) => !m)}
+          measureMode={measureMode}
+          canSave={validPolygon}
+          onSelectTool={setTouchTool}
+          activeTool={touchTool}
         />
         <main>
           <h2>{project.title}</h2>
           <LayoutCanvas
+            ref={canvasRef}
             points={points}
             setPoints={setPoints}
             showGrid={showGrid}
@@ -60,11 +220,24 @@ export default function DesignView() {
             gridSpacing={gridSpacing}
             snap={snap}
             autoStraight={autoStraight}
-            elements={elements}
-            setElements={setElements}
-          />
+          elements={elements}
+          setElements={setElements}
+          measureMode={measureMode}
+          onMeasureToggle={() => setMeasureMode((m) => !m)}
+          onUndo={() => {
+            undoPts()
+            undoEls()
+          }}
+          onRedo={() => {
+            redoPts()
+            redoEls()
+          }}
+          activeTool={touchTool}
+          onToolUsed={() => setTouchTool(null)}
+        />
         </main>
-        <LayoutStats points={points} scale={scale} />
+        <LayoutStats points={points} scale={scale} elements={elements} />
+        <HistoryPanel history={pointsHistory.history()} jump={pointsHistory.go} />
       </div>
     </div>
   )

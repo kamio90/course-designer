@@ -52,7 +52,6 @@ export default function CourseDesignView() {
     }
   }, [projectId])
 
-  const toggleScale = () => setScale((s) => (s === 10 ? 5 : 10))
 
   const addCompetition = () => {
     const id = crypto.randomUUID()
@@ -103,7 +102,7 @@ export default function CourseDesignView() {
         showGrid={showGrid}
         toggleGrid={() => setShowGrid((g) => !g)}
         scale={scale}
-        toggleScale={toggleScale}
+        setScale={setScale}
         connect={connectMode}
         toggleConnect={() => setConnectMode((c) => !c)}
       />
