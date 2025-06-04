@@ -18,6 +18,7 @@ export default function useMultiTouch(
 
     function down(e: PointerEvent) {
       if (e.pointerType !== 'touch') return
+      e.preventDefault()
       points.set(e.pointerId, { x: e.clientX, y: e.clientY })
       if (points.size === 2) {
         twoTimer = window.setTimeout(() => {
@@ -31,6 +32,7 @@ export default function useMultiTouch(
 
     function move(e: PointerEvent) {
       if (!points.has(e.pointerId)) return
+      if (points.size > 1) e.preventDefault()
       points.set(e.pointerId, { x: e.clientX, y: e.clientY })
       if (threeStart && points.size === 3 && !threeDone) {
         const now = Array.from(points.values())
@@ -62,10 +64,11 @@ export default function useMultiTouch(
       }
     }
 
-    el.addEventListener('pointerdown', down)
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
+    const opts = { passive: false } as AddEventListenerOptions
+    el.addEventListener('pointerdown', down, opts)
+    el.addEventListener('pointermove', move, opts)
+    el.addEventListener('pointerup', up, opts)
+    el.addEventListener('pointercancel', up, opts)
     return () => {
       el.removeEventListener('pointerdown', down)
       el.removeEventListener('pointermove', move)

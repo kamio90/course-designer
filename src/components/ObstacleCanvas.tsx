@@ -50,6 +50,7 @@ export default function ObstacleCanvas({
   const [connectSel, setConnectSel] = useState<string | null>(null)
   const [resize, setResize] = useState<{ id: string; dir: 'n' | 's' | 'e' | 'w' } | null>(null)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
+  const activeTouches = useRef(0)
   const pinch = useRef<
     | {
         dist: number
@@ -80,6 +81,8 @@ export default function ObstacleCanvas({
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (e.pointerType === 'touch') {
+      document.documentElement.style.overscrollBehavior = 'none'
+      activeTouches.current += 1
       e.preventDefault()
       e.currentTarget.setPointerCapture(e.pointerId)
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
@@ -144,6 +147,7 @@ export default function ObstacleCanvas({
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (e.pointerType === 'touch') e.preventDefault()
     if (pointers.current.has(e.pointerId)) {
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     }
@@ -206,6 +210,12 @@ export default function ObstacleCanvas({
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+    if (e.pointerType === 'touch') {
+      activeTouches.current = Math.max(0, activeTouches.current - 1)
+      if (activeTouches.current === 0) {
+        document.documentElement.style.overscrollBehavior = ''
+      }
     }
     pointers.current.delete(e.pointerId)
     if (pointers.current.size < 2) {
@@ -283,6 +293,25 @@ export default function ObstacleCanvas({
     window.addEventListener('keydown', keyHandler)
     return () => window.removeEventListener('keydown', keyHandler)
   }, [dragId, obstacles])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const preventMove = (ev: TouchEvent) => {
+      if (activeTouches.current > 0) ev.preventDefault()
+    }
+    const gesture = (ev: Event) => ev.preventDefault()
+    canvas.addEventListener('touchmove', preventMove, { passive: false })
+    canvas.addEventListener('gesturestart', gesture as EventListener, { passive: false })
+    canvas.addEventListener('gesturechange', gesture as EventListener, { passive: false })
+    canvas.addEventListener('gestureend', gesture as EventListener, { passive: false })
+    return () => {
+      canvas.removeEventListener('touchmove', preventMove)
+      canvas.removeEventListener('gesturestart', gesture as EventListener)
+      canvas.removeEventListener('gesturechange', gesture as EventListener)
+      canvas.removeEventListener('gestureend', gesture as EventListener)
+    }
+  }, [])
 
   useEffect(() => {
     const handle = requestAnimationFrame(() => {

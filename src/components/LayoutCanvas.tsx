@@ -120,6 +120,8 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
   const [measureEnd, setMeasureEnd] = useState<{ x: number; y: number } | null>(null)
   const longPressTimer = useRef<number>()
   const longPressPos = useRef<{ x: number; y: number } | null>(null)
+  const activeTouches = useRef(0)
+  const lastTap = useRef<{ time: number; x: number; y: number } | null>(null)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
   const pinch = useRef<
     | {
@@ -308,6 +310,19 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       return
     }
     if (e.pointerType === 'touch') {
+      const now = performance.now()
+      if (
+        lastTap.current &&
+        now - lastTap.current.time < 300 &&
+        Math.hypot(lastTap.current.x - e.clientX, lastTap.current.y - e.clientY) < 20
+      ) {
+        handleDoubleTap(e)
+        lastTap.current = null
+      } else {
+        lastTap.current = { time: now, x: e.clientX, y: e.clientY }
+      }
+      document.documentElement.style.overscrollBehavior = 'none'
+      activeTouches.current += 1
       e.preventDefault()
       e.currentTarget.setPointerCapture(e.pointerId)
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
@@ -428,6 +443,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const { x, y } = getPos(e)
+    if (e.pointerType === 'touch') e.preventDefault()
     if (pointers.current.has(e.pointerId)) {
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     }
@@ -554,6 +570,12 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId)
     }
+    if (e.pointerType === 'touch') {
+      activeTouches.current = Math.max(0, activeTouches.current - 1)
+      if (activeTouches.current === 0) {
+        document.documentElement.style.overscrollBehavior = ''
+      }
+    }
     pointers.current.delete(e.pointerId)
     if (pointers.current.size < 2) {
       pinch.current = null
@@ -586,6 +608,16 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       if (Math.hypot(points[i].x - x, points[i].y - y) < 8) {
         removePoint(i)
         break
+      }
+    }
+  }
+
+  const handleDoubleTap = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const { x, y } = getPos(e)
+    for (let i = points.length - 1; i >= 0; i--) {
+      if (Math.hypot(points[i].x - x, points[i].y - y) < 8) {
+        removePoint(i)
+        return
       }
     }
   }
@@ -866,6 +898,25 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       canvas.removeEventListener('webkitmouseforcechanged', forceHandler as EventListener)
     }
   }, [points])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const preventMove = (ev: TouchEvent) => {
+      if (activeTouches.current > 0) ev.preventDefault()
+    }
+    const gesture = (ev: Event) => ev.preventDefault()
+    canvas.addEventListener('touchmove', preventMove, { passive: false })
+    canvas.addEventListener('gesturestart', gesture as EventListener, { passive: false })
+    canvas.addEventListener('gesturechange', gesture as EventListener, { passive: false })
+    canvas.addEventListener('gestureend', gesture as EventListener, { passive: false })
+    return () => {
+      canvas.removeEventListener('touchmove', preventMove)
+      canvas.removeEventListener('gesturestart', gesture as EventListener)
+      canvas.removeEventListener('gesturechange', gesture as EventListener)
+      canvas.removeEventListener('gestureend', gesture as EventListener)
+    }
+  }, [])
 
   useEffect(() => {
     const handle = requestAnimationFrame(() => {
