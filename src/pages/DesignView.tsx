@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import DesignTopBar from '../components/DesignTopBar'
-import LayoutCanvas, { type Point, type ElementItem } from '../components/LayoutCanvas'
+import LayoutCanvas, {
+  type Point,
+  type ElementItem,
+  type LayoutCanvasHandle,
+} from '../components/LayoutCanvas'
 import LayoutTools from '../components/LayoutTools'
 import LayoutStats from '../components/LayoutStats'
 import HistoryPanel from '../components/HistoryPanel'
@@ -33,6 +37,7 @@ export default function DesignView() {
     undo: undoEls,
     redo: redoEls,
   } = elementsHistory
+  const canvasRef = useRef<LayoutCanvasHandle>(null)
   const [showGrid, setShowGrid] = useState(true)
   const [scale, setScale] = useState(10)
   const [gridSpacing, setGridSpacing] = useState(50)
@@ -149,6 +154,21 @@ export default function DesignView() {
             a.download = 'layout.json'
             a.click()
           }}
+          onExportSVG={() => {
+            const pts = points.map((p) => `${p.x},${p.y}`).join(' ')
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1500">`
+            if (points.length)
+              svg += `<polygon points="${pts}" fill="none" stroke="black" />`
+            elements.forEach((el) => {
+              svg += `<rect x="${el.x - el.w / 2}" y="${el.y - el.h / 2}" width="${el.w}" height="${el.h}" fill="orange" stroke="black" />`
+            })
+            svg += `</svg>`
+            const blob = new Blob([svg], { type: 'image/svg+xml' })
+            const a = document.createElement('a')
+            a.href = URL.createObjectURL(blob)
+            a.download = 'layout.svg'
+            a.click()
+          }}
           onExportData={() => {
             const data = {
               points,
@@ -171,6 +191,17 @@ export default function DesignView() {
               a.click()
             }
           }}
+          onUndo={() => {
+            undoPts()
+            undoEls()
+          }}
+          onRedo={() => {
+            redoPts()
+            redoEls()
+          }}
+          onCenter={() => {
+            canvasRef.current?.center()
+          }}
           onToggleMeasure={() => setMeasureMode((m) => !m)}
           measureMode={measureMode}
           canSave={validPolygon}
@@ -178,6 +209,7 @@ export default function DesignView() {
         <main>
           <h2>{project.title}</h2>
           <LayoutCanvas
+            ref={canvasRef}
             points={points}
             setPoints={setPoints}
             showGrid={showGrid}

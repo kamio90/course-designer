@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import {
   Menu,
   MenuItem,
@@ -56,7 +56,12 @@ interface ContextTarget {
   canvasPos?: { x: number; y: number }
 }
 
-export default function LayoutCanvas({
+export interface LayoutCanvasHandle {
+  center: () => void
+}
+
+const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas(
+  {
   points,
   setPoints,
   showGrid,
@@ -126,6 +131,8 @@ export default function LayoutCanvas({
       y: canvas.height / 2 - ((minY + maxY) / 2) * zoomVal,
     })
   }
+
+  useImperativeHandle(ref, () => ({ center: centerView }))
 
   useEffect(() => {
     const keyHandler = (ev: KeyboardEvent) => {
@@ -959,4 +966,6 @@ export default function LayoutCanvas({
       </Dialog>
     </Box>
   )
-}
+})
+
+export default LayoutCanvas

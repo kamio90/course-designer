@@ -25,8 +25,12 @@ interface Props {
   onClear: () => void
   onImport: (data: File) => void
   onExport: () => void
+  onExportSVG: () => void
   onExportPNG: () => void
   onExportData: () => void
+  onUndo: () => void
+  onRedo: () => void
+  onCenter: () => void
   onToggleMeasure: () => void
   measureMode: boolean
   canSave: boolean
@@ -37,8 +41,12 @@ export default function LayoutTools({
   onClear,
   onImport,
   onExport,
+  onExportSVG,
   onExportPNG,
   onExportData,
+  onUndo,
+  onRedo,
+  onCenter,
   onToggleMeasure,
   measureMode,
   canSave,
@@ -100,11 +108,23 @@ export default function LayoutTools({
           <Button onClick={onExport} fullWidth sx={{ mb: 1 }}>
             {t.exportLayout}
           </Button>
+          <Button onClick={onExportSVG} fullWidth sx={{ mb: 1 }}>
+            {t.exportSVG}
+          </Button>
           <Button onClick={onExportData} fullWidth sx={{ mb: 1 }}>
             {t.exportData}
           </Button>
           <Button onClick={onExportPNG} fullWidth sx={{ mb: 1 }}>
             {t.exportPNG}
+          </Button>
+          <Button onClick={onUndo} fullWidth sx={{ mb: 1 }}>
+            {t.undoAction}
+          </Button>
+          <Button onClick={onRedo} fullWidth sx={{ mb: 1 }}>
+            {t.redoAction}
+          </Button>
+          <Button onClick={onCenter} fullWidth sx={{ mb: 1 }}>
+            {t.centerAction}
           </Button>
           <Button
             onClick={onToggleMeasure}
