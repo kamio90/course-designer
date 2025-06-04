@@ -40,7 +40,16 @@ export default function CourseDesignView() {
   }, [obstacles, connections, active])
   useEffect(() => {
     const raw = sessionStorage.getItem(`layout_${projectId}`)
-    if (raw) setLayout(JSON.parse(raw))
+    if (raw) {
+      const parsedRaw: Array<{ id?: string; x: number; y: number; label?: string }> = JSON.parse(raw)
+      const parsed: Point[] = parsedRaw.map((p) => ({
+        id: p.id ?? crypto.randomUUID(),
+        x: p.x,
+        y: p.y,
+        label: p.label,
+      }))
+      setLayout(parsed)
+    }
   }, [projectId])
 
   const toggleScale = () => setScale((s) => (s === 10 ? 5 : 10))
