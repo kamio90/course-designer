@@ -89,6 +89,14 @@ export default function LayoutCanvas({
   const [space, setSpace] = useState(false)
   const [measureStart, setMeasureStart] = useState<{ x: number; y: number } | null>(null)
   const [measureEnd, setMeasureEnd] = useState<{ x: number; y: number } | null>(null)
+  const longPressTimer = useRef<number>()
+  const longPressPos = useRef<{ x: number; y: number } | null>(null)
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current)
+    longPressTimer.current = undefined
+    longPressPos.current = null
+  }
 
   const centerView = () => {
     const canvas = canvasRef.current
@@ -125,7 +133,7 @@ export default function LayoutCanvas({
         centerView()
       } else if (k === 'm') {
         ev.preventDefault()
-        onMeasureToggle && onMeasureToggle()
+        if (onMeasureToggle) onMeasureToggle()
         setMeasureStart(null)
         setMeasureEnd(null)
       } else if (k === 'escape') {
@@ -188,7 +196,17 @@ export default function LayoutCanvas({
   }
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (e.pointerType === 'touch') {
+      const pos = getPos(e)
+      const cx = e.clientX
+      const cy = e.clientY
+      longPressPos.current = { x: cx, y: cy }
+      longPressTimer.current = window.setTimeout(() => {
+        openContext(pos, cx, cy)
+      }, 600)
+    }
     if (measureMode && e.button === 0) {
+      cancelLongPress()
       const { x, y } = getPos(e)
       if (!measureStart) {
         setMeasureStart({ x, y })
@@ -199,6 +217,7 @@ export default function LayoutCanvas({
       return
     }
     if (e.button === 1 || (e.button === 0 && space)) {
+      cancelLongPress()
       setPanStart({ x: e.clientX, y: e.clientY })
       return
     }
@@ -207,20 +226,24 @@ export default function LayoutCanvas({
       const p = points[i]
       if (Math.hypot(p.x - x, p.y - y) < 8) {
         if (e.altKey) {
+          cancelLongPress()
           setRadiusIndex(i)
           return
         }
         if (i === 0 && points.length >= 3 && !isClosed() && e.button === 0) {
+          cancelLongPress()
           setPoints([...points, { ...points[0] }])
           setClosed(true)
           return
         }
+        cancelLongPress()
         setDragIndex(i)
         return
       }
     }
     for (const el of elements) {
       if (x >= el.x - 10 && x <= el.x + 10 && y >= el.y - 10 && y <= el.y + 10) {
+        cancelLongPress()
         setDragEl(el.id)
         return
       }
@@ -252,6 +275,15 @@ export default function LayoutCanvas({
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const { x, y } = getPos(e)
+    if (longPressPos.current) {
+      const dx = e.clientX - longPressPos.current.x
+      const dy = e.clientY - longPressPos.current.y
+      if (Math.hypot(dx, dy) > 5) {
+        if (longPressTimer.current) window.clearTimeout(longPressTimer.current)
+        longPressTimer.current = undefined
+        longPressPos.current = null
+      }
+    }
     if (measureMode && measureStart && !measureEnd) {
       setMeasureEnd({ x, y })
       return
@@ -340,6 +372,9 @@ export default function LayoutCanvas({
     setDragPreview(null)
     setHoverFirst(false)
     setRadiusIndex(null)
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current)
+    longPressTimer.current = undefined
+    longPressPos.current = null
   }
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -352,9 +387,11 @@ export default function LayoutCanvas({
     }
   }
 
-  const handleContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    e.preventDefault()
-    const pos = getPos(e)
+  const openContext = (
+    pos: { x: number; y: number },
+    clientX: number,
+    clientY: number,
+  ) => {
     let type: ContextTarget['type'] = 'canvas'
     let idx = -1
     for (let i = points.length - 1; i >= 0; i--) {
@@ -392,7 +429,13 @@ export default function LayoutCanvas({
       }
     }
     setContext({ type, index: idx, canvasPos: pos })
-    setAnchor({ x: e.clientX, y: e.clientY })
+    setAnchor({ x: clientX, y: clientY })
+  }
+
+  const handleContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault()
+    const pos = getPos(e)
+    openContext(pos, e.clientX, e.clientY)
   }
 
   const createPoint = () => {
@@ -783,6 +826,7 @@ export default function LayoutCanvas({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         onContextMenu={(e) => {
           e.preventDefault()
           handleContextMenu(e)
