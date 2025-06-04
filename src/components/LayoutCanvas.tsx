@@ -79,8 +79,12 @@ export default function LayoutCanvas({
 
   const getPos = (e: { clientX: number; clientY: number; shiftKey: boolean }) => {
     const rect = canvasRef.current!.getBoundingClientRect()
-    let x = (e.clientX - rect.left - offset.x) / zoom
-    let y = (e.clientY - rect.top - offset.y) / zoom
+    const scaleX = canvasRef.current!.width / rect.width
+    const scaleY = canvasRef.current!.height / rect.height
+    let x = (e.clientX - rect.left) * scaleX
+    let y = (e.clientY - rect.top) * scaleY
+    x = (x - offset.x) / zoom
+    y = (y - offset.y) / zoom
     const snapActive = snap || e.shiftKey
     if (snapActive) {
       x = Math.round(x / gridSpacing) * gridSpacing
