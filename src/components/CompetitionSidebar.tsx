@@ -9,15 +9,28 @@ import {
   Box,
   TextField,
   Button,
+  ListItemSecondaryAction,
+  Dialog,
+  DialogTitle,
+  DialogActions,
 } from '@mui/material'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import DeleteIcon from '@mui/icons-material/Delete'
+import FileDownloadIcon from '@mui/icons-material/FileDownload'
+import PrintIcon from '@mui/icons-material/Print'
+import EditIcon from '@mui/icons-material/Edit'
 import { translations } from '../i18n'
 import { useApp } from '../context/AppContext'
+import type { Obstacle, Connection } from './ObstacleCanvas'
+import type { Point } from './LayoutCanvas'
 
 export interface Competition {
   id: string
   name: string
+  obstacles: Obstacle[]
+  connections: Connection[]
+  layout: Point[]
 }
 
 interface Props {
@@ -27,7 +40,10 @@ interface Props {
   add: () => void
   rename: (id: string, name: string) => void
   duplicate: () => void
-  exportCourse: () => void
+  deleteComp: (id: string) => void
+  exportPDF: () => void
+  exportSVG: () => void
+  printCourse: () => void
 }
 
 export default function CompetitionSidebar({
@@ -37,12 +53,17 @@ export default function CompetitionSidebar({
   add,
   rename,
   duplicate,
-  exportCourse,
+  deleteComp,
+  exportPDF,
+  exportSVG,
+  printCourse,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
   const { lang } = useApp()
   const t = translations[lang]
-  const width = collapsed ? 40 : 240
+  const width = collapsed ? 40 : 260
 
   return (
     <Paper component="aside" elevation={1} sx={{ width, flexShrink: 0, transition: 'width 0.3s', overflow: 'hidden' }}>
@@ -64,8 +85,47 @@ export default function CompetitionSidebar({
         <>
           <List dense>
             {competitions.map((c) => (
-              <ListItem key={c.id} selected={c.id === active} button onClick={() => setActive(c.id)}>
-                <ListItemText primary={c.name} />
+              <ListItem
+                key={c.id}
+                selected={c.id === active}
+                button
+                onClick={() => setActive(c.id)}
+              >
+                {editId === c.id ? (
+                  <TextField
+                    value={c.name}
+                    size="small"
+                    onChange={(e) => rename(c.id, e.target.value)}
+                    onBlur={() => setEditId(null)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') setEditId(null)
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <ListItemText
+                    primary={c.name}
+                    onDoubleClick={() => setEditId(c.id)}
+                  />
+                )}
+                <ListItemSecondaryAction>
+                  <IconButton
+                    edge="end"
+                    size="small"
+                    aria-label={t.rename}
+                    onClick={() => setEditId(c.id)}
+                  >
+                    <EditIcon fontSize="inherit" />
+                  </IconButton>
+                  <IconButton
+                    edge="end"
+                    size="small"
+                    aria-label={t.deleteCompetition}
+                    onClick={() => setDeleteId(c.id)}
+                  >
+                    <DeleteIcon fontSize="inherit" />
+                  </IconButton>
+                </ListItemSecondaryAction>
               </ListItem>
             ))}
           </List>
@@ -76,24 +136,48 @@ export default function CompetitionSidebar({
             <Button onClick={duplicate} fullWidth sx={{ mb: 1 }}>
               {t.duplicate}
             </Button>
-            <Button onClick={exportCourse} fullWidth sx={{ mb: 1 }}>
-              {t.export}
+            <Button
+              onClick={exportPDF}
+              startIcon={<FileDownloadIcon />}
+              fullWidth
+              sx={{ mb: 1 }}
+            >
+              {t.exportPDF}
             </Button>
-            {competitions.map((c) => (
-              c.id === active && (
-                <TextField
-                  key={c.id}
-                  size="small"
-                  fullWidth
-                  margin="dense"
-                  value={c.name}
-                  onChange={(e) => rename(c.id, e.target.value)}
-                />
-              )
-            ))}
+            <Button
+              onClick={exportSVG}
+              startIcon={<FileDownloadIcon />}
+              fullWidth
+              sx={{ mb: 1 }}
+            >
+              {t.exportSVG}
+            </Button>
+            <Button
+              onClick={printCourse}
+              startIcon={<PrintIcon />}
+              fullWidth
+              sx={{ mb: 1 }}
+            >
+              {t.print}
+            </Button>
           </Box>
-        </>
+          </>
       )}
+      <Dialog open={!!deleteId} onClose={() => setDeleteId(null)}>
+        <DialogTitle>{t.deleteCompetition}?</DialogTitle>
+        <DialogActions>
+          <Button onClick={() => setDeleteId(null)}>Cancel</Button>
+          <Button
+            color="error"
+            onClick={() => {
+              if (deleteId) deleteComp(deleteId)
+              setDeleteId(null)
+            }}
+          >
+            {t.deleteCompetition}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   )
 }
