@@ -47,7 +47,7 @@ interface Props {
 }
 
 interface ContextTarget {
-  type: 'canvas' | 'point' | 'line'
+  type: 'canvas' | 'point' | 'line' | 'element'
   index: number
   canvasPos?: { x: number; y: number }
 }
@@ -291,6 +291,21 @@ export default function LayoutCanvas({
         }
       }
     }
+    if (type === 'canvas') {
+      for (let i = elements.length - 1; i >= 0; i--) {
+        const el = elements[i]
+        if (
+          pos.x >= el.x - el.w / 2 &&
+          pos.x <= el.x + el.w / 2 &&
+          pos.y >= el.y - el.h / 2 &&
+          pos.y <= el.y + el.h / 2
+        ) {
+          type = 'element'
+          idx = i
+          break
+        }
+      }
+    }
     setContext({ type, index: idx, canvasPos: pos })
     let ax = e.clientX
     let ay = e.clientY
@@ -304,6 +319,10 @@ export default function LayoutCanvas({
       const p2 = points[idx + 1]
       ax = rect.left + offset.x + ((p1.x + p2.x) / 2) * zoom
       ay = rect.top + offset.y + ((p1.y + p2.y) / 2) * zoom
+    } else if (type === 'element' && idx >= 0) {
+      const el = elements[idx]
+      ax = rect.left + offset.x + el.x * zoom
+      ay = rect.top + offset.y + el.y * zoom
     }
     setAnchor({ x: ax, y: ay })
   }
@@ -456,6 +475,30 @@ export default function LayoutCanvas({
       return p
     })
     setPoints(list)
+    setContext(null)
+  }
+
+  const resizeElement = (idx: number) => {
+    const el = elements[idx]
+    const wInput = prompt('Width (m):', (el.w / scale).toFixed(2))
+    if (!wInput) {
+      setContext(null)
+      return
+    }
+    const hInput = prompt('Height (m):', (el.h / scale).toFixed(2))
+    if (!hInput) {
+      setContext(null)
+      return
+    }
+    const nw = parseFloat(wInput) * scale
+    const nh = parseFloat(hInput) * scale
+    if (Number.isNaN(nw) || Number.isNaN(nh) || nw <= 0 || nh <= 0) {
+      setContext(null)
+      return
+    }
+    setElements(
+      elements.map((e, i) => (i === idx ? { ...e, w: nw, h: nh } : e)),
+    )
     setContext(null)
   }
 
@@ -660,6 +703,11 @@ export default function LayoutCanvas({
             <MenuItem onClick={() => toggleCurveForLine(context.index)}>{t.toggleCurve}</MenuItem>
             <MenuItem onClick={() => straightenEdge(context.index)}>{t.straighten}</MenuItem>
           </>
+        )}
+        {context?.type === 'element' && (
+          <MenuItem onClick={() => resizeElement(context.index)}>
+            {t.resizeElement}
+          </MenuItem>
         )}
       </Menu>
       <Dialog open={!!renameInfo} onClose={() => setRenameInfo(null)}>

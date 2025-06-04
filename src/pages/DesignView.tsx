@@ -83,7 +83,7 @@ export default function DesignView() {
             setElements={setElements}
           />
         </main>
-        <LayoutStats points={points} scale={scale} />
+        <LayoutStats points={points} scale={scale} elements={elements} />
       </div>
     </div>
   )

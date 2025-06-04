@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { Point } from './LayoutCanvas'
+import type { Point, ElementItem } from './LayoutCanvas'
 import {
   Paper,
   IconButton,
@@ -17,9 +17,10 @@ import { translations } from '../i18n'
 interface Props {
   points: Point[]
   scale: number
+  elements: ElementItem[]
 }
 
-export default function LayoutStats({ points, scale }: Props) {
+export default function LayoutStats({ points, scale, elements }: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const { lang } = useApp()
   const t = translations[lang]
@@ -44,8 +45,32 @@ export default function LayoutStats({ points, scale }: Props) {
       area = Math.abs(area / 2)
     }
     const edges = unique > 1 ? unique : 0
-    return { length, closed, area, edges, unique }
-  }, [points])
+
+    const poly = closed ? points.slice(0, -1) : points
+    const pointInPoly = (px: number, py: number) => {
+      let inside = false
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const xi = poly[i].x,
+          yi = poly[i].y
+        const xj = poly[j].x,
+          yj = poly[j].y
+        const intersect =
+          yi > py !== yj > py &&
+          px < ((xj - xi) * (py - yi)) / (yj - yi) + xi
+        if (intersect) inside = !inside
+      }
+      return inside
+    }
+    let occupied = 0
+    if (closed) {
+      for (const el of elements) {
+        if (pointInPoly(el.x, el.y)) {
+          occupied += el.w * el.h
+        }
+      }
+    }
+    return { length, closed, area, edges, unique, occupied }
+  }, [points, elements])
 
   const width = collapsed ? 40 : 240
 
@@ -82,6 +107,9 @@ export default function LayoutStats({ points, scale }: Props) {
           </ListItem>
           <ListItem>
             <ListItemText primary={`${t.area}: ${(stats.area / (scale * scale)).toFixed(2)} m²`} />
+          </ListItem>
+          <ListItem>
+            <ListItemText primary={`${t.occupiedArea}: ${(stats.occupied / (scale * scale)).toFixed(2)} m²`} />
           </ListItem>
           <ListItem>
             <ListItemText primary={`${t.closedShape}: ${stats.closed ? t.yes : t.no}`} />
