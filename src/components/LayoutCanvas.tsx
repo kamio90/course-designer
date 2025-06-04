@@ -321,7 +321,6 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
       } else {
         lastTap.current = { time: now, x: e.clientX, y: e.clientY }
       }
-      document.documentElement.style.overscrollBehavior = 'none'
       activeTouches.current += 1
       e.preventDefault()
       e.currentTarget.setPointerCapture(e.pointerId)
@@ -572,9 +571,6 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
     }
     if (e.pointerType === 'touch') {
       activeTouches.current = Math.max(0, activeTouches.current - 1)
-      if (activeTouches.current === 0) {
-        document.documentElement.style.overscrollBehavior = ''
-      }
     }
     pointers.current.delete(e.pointerId)
     if (pointers.current.size < 2) {
@@ -910,11 +906,46 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
     canvas.addEventListener('gesturestart', gesture as EventListener, { passive: false })
     canvas.addEventListener('gesturechange', gesture as EventListener, { passive: false })
     canvas.addEventListener('gestureend', gesture as EventListener, { passive: false })
+
+    let ts: (e: TouchEvent) => void
+    let tm: (e: TouchEvent) => void
+    let te: (e: TouchEvent) => void
+    if (!('PointerEvent' in window)) {
+      const toPtr = (touch: Touch) => ({
+        pointerId: touch.identifier,
+        pointerType: 'touch',
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        buttons: 1,
+        shiftKey: false,
+        altKey: false,
+        preventDefault: () => {},
+        currentTarget: canvas,
+      } as unknown as React.PointerEvent<HTMLCanvasElement>)
+      ts = (e) => {
+        handlePointerDown(toPtr(e.changedTouches[0]))
+      }
+      tm = (e) => {
+        handlePointerMove(toPtr(e.changedTouches[0]))
+      }
+      te = (e) => {
+        handlePointerUp(toPtr(e.changedTouches[0]))
+      }
+      canvas.addEventListener('touchstart', ts, { passive: false })
+      canvas.addEventListener('touchmove', tm, { passive: false })
+      canvas.addEventListener('touchend', te)
+    }
+
     return () => {
       canvas.removeEventListener('touchmove', preventMove)
       canvas.removeEventListener('gesturestart', gesture as EventListener)
       canvas.removeEventListener('gesturechange', gesture as EventListener)
       canvas.removeEventListener('gestureend', gesture as EventListener)
+      if (!('PointerEvent' in window)) {
+        canvas.removeEventListener('touchstart', ts)
+        canvas.removeEventListener('touchmove', tm)
+        canvas.removeEventListener('touchend', te)
+      }
     }
   }, [])
 
@@ -1113,7 +1144,14 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
         ref={canvasRef}
         width={2000}
         height={1500}
-        style={{ border: '1px solid #ccc', width: '100%', height: 600, touchAction: 'none' }}
+        style={{
+          border: '1px solid #ccc',
+          width: '100%',
+          height: 600,
+          touchAction: 'none',
+          overscrollBehavior: 'contain',
+        }}
+        tabIndex={0}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
