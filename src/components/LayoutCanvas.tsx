@@ -23,6 +23,7 @@ import { useApp } from '../context/AppContext'
 import { translations } from '../i18n'
 import { matchShortcut } from '../utils/shortcuts'
 import useMultiTouch from '../hooks/useMultiTouch'
+import useGesturePlugins, { GesturePlugin } from '../hooks/useGesturePlugins'
 
 export interface ElementItem {
   id: string
@@ -60,6 +61,7 @@ interface Props {
   onRedo?: () => void
   activeTool?: string | null
   onToolUsed?: () => void
+  gesturePlugins?: GesturePlugin[]
 }
 
 interface ContextTarget {
@@ -86,10 +88,11 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
   setElements,
   measureMode,
   onMeasureToggle,
-  onUndo,
+    onUndo,
     onRedo,
     activeTool,
     onToolUsed,
+    gesturePlugins,
   }: Props,
   ref: ForwardedRef<LayoutCanvasHandle>,
 ) {
@@ -180,6 +183,7 @@ const LayoutCanvas = forwardRef<LayoutCanvasHandle, Props>(function LayoutCanvas
   }))
 
   useMultiTouch(canvasRef, centerView, onUndo, onRedo, advancedGestures)
+  useGesturePlugins(canvasRef, gesturePlugins || [], { passive: false })
 
   useEffect(() => {
     const keyHandler = (ev: KeyboardEvent) => {

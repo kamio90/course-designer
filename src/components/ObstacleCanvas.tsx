@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import type { Point } from './LayoutCanvas'
+import useGesturePlugins, { GesturePlugin } from '../hooks/useGesturePlugins'
 
 export interface Obstacle {
   id: string
@@ -26,6 +27,7 @@ interface Props {
   showGrid: boolean
   scale: number
   connectMode: boolean
+  gesturePlugins?: GesturePlugin[]
 }
 
 export default function ObstacleCanvas({
@@ -37,6 +39,7 @@ export default function ObstacleCanvas({
   showGrid,
   scale,
   connectMode,
+  gesturePlugins,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { advancedGestures } = useApp()
@@ -58,6 +61,7 @@ export default function ObstacleCanvas({
   >(null)
   const actionPointer = useRef<number | null>(null)
   const panPointer = useRef<number | null>(null)
+  useGesturePlugins(canvasRef, gesturePlugins || [], { passive: false })
 
   const getPos = (e: { clientX: number; clientY: number; shiftKey: boolean }) => {
     const rect = canvasRef.current!.getBoundingClientRect()
