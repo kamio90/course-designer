@@ -77,11 +77,9 @@ export default function LayoutCanvas({
   const [curves, setCurves] = useState<Record<number, boolean>>({})
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
   const [hoverFirst, setHoverFirst] = useState(false)
+  const [closed, setClosed] = useState(false)
 
-  const isClosed = () =>
-    points.length > 3 &&
-    points[0].x === points[points.length - 1].x &&
-    points[0].y === points[points.length - 1].y
+  const isClosed = () => closed
 
   const getPos = (e: { clientX: number; clientY: number; shiftKey: boolean }) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -129,6 +127,7 @@ export default function LayoutCanvas({
       if (Math.hypot(p.x - x, p.y - y) < 8) {
         if (i === 0 && points.length >= 3 && !isClosed() && e.button === 0) {
           setPoints([...points, { ...points[0] }])
+          setClosed(true)
           return
         }
         setDragIndex(i)
@@ -280,11 +279,13 @@ export default function LayoutCanvas({
       if (idx === 0) {
         const trimmed = points.slice(1, points.length - 1)
         setPoints(trimmed)
+        setClosed(false)
         setContext(null)
         return
       }
       if (idx === points.length - 1) {
         setPoints(points.slice(0, points.length - 1))
+        setClosed(false)
         setContext(null)
         return
       }
@@ -346,6 +347,7 @@ export default function LayoutCanvas({
     if (idx + 1 >= points.length) return
     if (isClosed() && idx === points.length - 2) {
       setPoints(points.slice(0, points.length - 1))
+      setClosed(false)
     } else {
       setPoints(points.filter((_, i) => i !== idx + 1))
     }
@@ -448,6 +450,16 @@ export default function LayoutCanvas({
       ctx.restore()
     }
   }, [points, showGrid, scale, gridSpacing, elements, offset, zoom, curves, dragIndex, dragPreview])
+
+  useEffect(() => {
+    const closedDetected =
+      points.length > 3 &&
+      points[0].x === points[points.length - 1].x &&
+      points[0].y === points[points.length - 1].y
+    if (closedDetected !== closed) {
+      setClosed(closedDetected)
+    }
+  }, [points, closed])
 
   return (
     <Box sx={{ position: 'relative' }}>
