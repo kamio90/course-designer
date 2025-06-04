@@ -40,7 +40,6 @@ export default function DesignView() {
   const [autoStraight, setAutoStraight] = useState(false)
   const [measureMode, setMeasureMode] = useState(false)
 
-  const toggleScale = () => setScale((s) => (s === 10 ? 1 : 10))
 
   // restore autosaved layout on mount
   useEffect(() => {
@@ -106,7 +105,7 @@ export default function DesignView() {
         showGrid={showGrid}
         toggleGrid={() => setShowGrid((g) => !g)}
         scale={scale}
-        toggleScale={toggleScale}
+        setScale={setScale}
         gridSpacing={gridSpacing}
         setGridSpacing={setGridSpacing}
         snap={snap}
@@ -148,6 +147,19 @@ export default function DesignView() {
             const a = document.createElement('a')
             a.href = URL.createObjectURL(blob)
             a.download = 'layout.json'
+            a.click()
+          }}
+          onExportData={() => {
+            const data = {
+              points,
+              elements,
+              scale,
+              gridSpacing,
+            }
+            const blob = new Blob([JSON.stringify(data, null, 2)])
+            const a = document.createElement('a')
+            a.href = URL.createObjectURL(blob)
+            a.download = 'course_data.json'
             a.click()
           }}
           onExportPNG={() => {
