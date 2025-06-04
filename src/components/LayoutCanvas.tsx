@@ -194,6 +194,19 @@ export default function LayoutCanvas({
       if (Math.abs(nx - last.x) < 10) nx = last.x
       if (Math.abs(ny - last.y) < 10) ny = last.y
     }
+    if (e.shiftKey && points.length) {
+      const last = points[points.length - 1]
+      const dx = nx - last.x
+      const dy = ny - last.y
+      const len = Math.hypot(dx, dy)
+      if (len > 0) {
+        const step = Math.PI / 12
+        const angle = Math.atan2(dy, dx)
+        const snapA = Math.round(angle / step) * step
+        nx = last.x + len * Math.cos(snapA)
+        ny = last.y + len * Math.sin(snapA)
+      }
+    }
     setPoints([...points, { id: crypto.randomUUID(), x: nx, y: ny }])
   }
 
@@ -205,16 +218,36 @@ export default function LayoutCanvas({
       return
     }
     if (dragIndex !== null) {
+      let nx = x
+      let ny = y
+      if (e.shiftKey && points.length > 1) {
+        const baseIndex = dragIndex === 0 ? 1 : dragIndex - 1
+        const base = points[baseIndex]
+        const dx = x - base.x
+        const dy = y - base.y
+        const len = Math.hypot(dx, dy)
+        if (len > 0) {
+          const step = Math.PI / 12
+          const angle = Math.atan2(dy, dx)
+          const snapA = Math.round(angle / step) * step
+          nx = base.x + len * Math.cos(snapA)
+          ny = base.y + len * Math.sin(snapA)
+        }
+      }
       setPoints(
         points.map((p, i) => {
-          if (dragIndex === i) return { ...p, x, y }
-          if (isClosed() && ((dragIndex === 0 && i === points.length - 1) || (dragIndex === points.length - 1 && i === 0))) {
-            return { ...p, x, y }
+          if (dragIndex === i) return { ...p, x: nx, y: ny }
+          if (
+            isClosed() &&
+            ((dragIndex === 0 && i === points.length - 1) ||
+              (dragIndex === points.length - 1 && i === 0))
+          ) {
+            return { ...p, x: nx, y: ny }
           }
           return p
         }),
       )
-      setDragPreview({ x, y })
+      setDragPreview({ x: nx, y: ny })
     } else if (dragEl) {
       setElements(elements.map((el) => (el.id === dragEl ? { ...el, x, y } : el)))
       setDragPreview({ x, y })

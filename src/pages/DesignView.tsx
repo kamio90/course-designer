@@ -67,6 +67,10 @@ export default function DesignView() {
             sessionStorage.setItem(`layout_${projectId}`, JSON.stringify(points))
             navigate(`/project/${projectId}/course`)
           }}
+          onClear={() => {
+            setPoints([])
+            setElements([])
+          }}
           canSave={closed}
         />
         <main>

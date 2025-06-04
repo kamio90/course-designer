@@ -22,10 +22,11 @@ import { useApp } from '../context/AppContext'
 
 interface Props {
   onSave: () => void
+  onClear: () => void
   canSave: boolean
 }
 
-export default function LayoutTools({ onSave, canSave }: Props) {
+export default function LayoutTools({ onSave, onClear, canSave }: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const { lang } = useApp()
   const t = translations[lang]
@@ -60,6 +61,9 @@ export default function LayoutTools({ onSave, canSave }: Props) {
         <>
           <Button onClick={onSave} disabled={!canSave} fullWidth sx={{ mb: 1 }}>
             {t.saveLayout}
+          </Button>
+          <Button onClick={onClear} fullWidth sx={{ mb: 1 }}>
+            {t.clearArea}
           </Button>
           <List dense>
             {items.map((item) => (
