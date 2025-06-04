@@ -57,6 +57,7 @@ export const translations = {
     deleteLine: 'Delete line',
     toggleCurve: 'Toggle curve',
     editLength: 'Edit length',
+    roundCorner: 'Round corner',
     resizeElement: 'Resize',
     snap: 'Snap to grid',
     straighten: 'Auto-straighten',
@@ -90,7 +91,7 @@ export const translations = {
     yes: 'Yes',
     no: 'No',
     helpText:
-      '• Left click — add point / move point\n• Shift + drag — snap to grid\n• Middle mouse — pan\n• Wheel — zoom\n• Right click — context menu\n• Double-click point — delete\n• Ctrl+Z / Ctrl+Y — undo/redo\n• F — center view\n• R — rotate obstacle',
+      '• Left click — add point / move point\n• Shift + drag — snap to grid\n• Alt + drag point — round corner\n• Middle mouse or Space — pan\n• Wheel — zoom\n• Right click — context menu\n• Double-click point — delete\n• Ctrl+Z / Ctrl+Y — undo/redo\n• F — center view\n• R — rotate obstacle',
   },
   pl: {
     login: 'Zaloguj',
@@ -150,6 +151,7 @@ export const translations = {
     deleteLine: 'Usuń linię',
     toggleCurve: 'Przełącz krzywą',
     editLength: 'Zmień długość',
+    roundCorner: 'Zaokrąglij róg',
     resizeElement: 'Zmień rozmiar',
     snap: 'Przyciąganie do siatki',
     straighten: 'Prostowanie linii',
@@ -183,7 +185,7 @@ export const translations = {
     yes: 'Tak',
     no: 'Nie',
     helpText:
-      '• Lewy klik — dodaj/przesuń punkt\n• Shift + przeciągaj — przyciągaj do siatki\n• Środkowy przycisk — przesuwaj widok\n• Rolka — zoom\n• Prawy klik — menu kontekstowe\n• Podwójne kliknięcie punktu — usuń\n• Ctrl+Z / Ctrl+Y — cofaj/ponawiaj\n• F — wycentruj widok\n• R — obrót przeszkody',
+      '• Lewy klik — dodaj/przesuń punkt\n• Shift + przeciągaj — przyciągaj do siatki\n• Alt + przeciągaj punkt — zaokrąglij róg\n• Środkowy przycisk lub spacja — przesuwaj widok\n• Rolka — zoom\n• Prawy klik — menu kontekstowe\n• Podwójne kliknięcie punktu — usuń\n• Ctrl+Z / Ctrl+Y — cofaj/ponawiaj\n• F — wycentruj widok\n• R — obrót przeszkody',
   },
 } as const
 

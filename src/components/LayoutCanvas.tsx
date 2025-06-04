@@ -32,6 +32,7 @@ export interface Point {
   label?: string
   start?: boolean
   end?: boolean
+  radius?: number
 }
 
 interface Props {
@@ -80,6 +81,8 @@ export default function LayoutCanvas({
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
   const [hoverFirst, setHoverFirst] = useState(false)
   const [closed, setClosed] = useState(false)
+  const [radiusIndex, setRadiusIndex] = useState<number | null>(null)
+  const [space, setSpace] = useState(false)
 
   const centerView = () => {
     const canvas = canvasRef.current
@@ -118,10 +121,19 @@ export default function LayoutCanvas({
         ev.preventDefault()
         setPoints([...points, { ...points[0] }])
         setClosed(true)
+      } else if (ev.code === 'Space') {
+        setSpace(true)
       }
     }
+    const upHandler = (ev: KeyboardEvent) => {
+      if (ev.code === 'Space') setSpace(false)
+    }
     window.addEventListener('keydown', keyHandler)
-    return () => window.removeEventListener('keydown', keyHandler)
+    window.addEventListener('keyup', upHandler)
+    return () => {
+      window.removeEventListener('keydown', keyHandler)
+      window.removeEventListener('keyup', upHandler)
+    }
   }, [points, closed])
 
   const isClosed = () => closed
@@ -162,7 +174,7 @@ export default function LayoutCanvas({
   }
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (e.button === 1) {
+    if (e.button === 1 || (e.button === 0 && space)) {
       setPanStart({ x: e.clientX, y: e.clientY })
       return
     }
@@ -170,6 +182,10 @@ export default function LayoutCanvas({
     for (let i = points.length - 1; i >= 0; i--) {
       const p = points[i]
       if (Math.hypot(p.x - x, p.y - y) < 8) {
+        if (e.altKey) {
+          setRadiusIndex(i)
+          return
+        }
         if (i === 0 && points.length >= 3 && !isClosed() && e.button === 0) {
           setPoints([...points, { ...points[0] }])
           setClosed(true)
@@ -207,7 +223,7 @@ export default function LayoutCanvas({
         ny = last.y + len * Math.sin(snapA)
       }
     }
-    setPoints([...points, { id: crypto.randomUUID(), x: nx, y: ny }])
+    setPoints([...points, { id: crypto.randomUUID(), x: nx, y: ny, radius: 0 }])
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -217,7 +233,14 @@ export default function LayoutCanvas({
       setPanStart({ x: e.clientX, y: e.clientY })
       return
     }
-    if (dragIndex !== null) {
+    if (radiusIndex !== null) {
+      const base = points[radiusIndex]
+      const r = Math.hypot(base.x - x, base.y - y)
+      setPoints(
+        points.map((p, i) => (i === radiusIndex ? { ...p, radius: r } : p)),
+      )
+      setDragPreview({ x, y })
+    } else if (dragIndex !== null) {
       let nx = x
       let ny = y
       if (e.shiftKey && points.length > 1) {
@@ -288,6 +311,7 @@ export default function LayoutCanvas({
     setPanStart(null)
     setDragPreview(null)
     setHoverFirst(false)
+    setRadiusIndex(null)
   }
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -366,7 +390,10 @@ export default function LayoutCanvas({
       return
     }
     if (context?.canvasPos) {
-      setPoints([...points, { id: crypto.randomUUID(), x: context.canvasPos.x, y: context.canvasPos.y }])
+      setPoints([
+        ...points,
+        { id: crypto.randomUUID(), x: context.canvasPos.x, y: context.canvasPos.y, radius: 0 },
+      ])
     }
     setContext(null)
   }
@@ -426,6 +453,22 @@ export default function LayoutCanvas({
     setContext(null)
   }
 
+  const setCornerRadius = (idx: number) => {
+    const p = points[idx]
+    const input = prompt('Radius (m):', ((p.radius ?? 0) / scale).toFixed(2))
+    if (!input) {
+      setContext(null)
+      return
+    }
+    const val = parseFloat(input)
+    if (Number.isNaN(val) || val < 0) {
+      setContext(null)
+      return
+    }
+    setPoints(points.map((pt, i) => (i === idx ? { ...pt, radius: val * scale } : pt)))
+    setContext(null)
+  }
+
   const insertMidpoint = (idx: number) => {
     const p1 = points[idx]
     const p2 = points[idx + 1]
@@ -433,6 +476,7 @@ export default function LayoutCanvas({
       id: crypto.randomUUID(),
       x: (p1.x + p2.x) / 2,
       y: (p1.y + p2.y) / 2,
+      radius: 0,
     }
     const list = [...points]
     list.splice(idx + 1, 0, mid)
@@ -572,18 +616,36 @@ export default function LayoutCanvas({
     if (points.length > 1) {
       ctx.strokeStyle = 'blue'
       ctx.beginPath()
-      ctx.moveTo(points[0].x, points[0].y)
-      for (let i = 1; i < points.length; i++) {
-        const p = points[i]
-        const prev = points[i - 1]
-        if (curves[i - 1]) {
-          const mx = (prev.x + p.x) / 2
-          const my = (prev.y + p.y) / 2 - 40
-          ctx.quadraticCurveTo(mx, my, p.x, p.y)
+      const n = points.length
+      for (let i = 0; i < n; i++) {
+        const curr = points[i]
+        const prev = points[(i - 1 + n) % n]
+        const next = points[(i + 1) % n]
+        const r = curr.radius ?? 0
+        if (i === 0) {
+          ctx.moveTo(curr.x, curr.y)
+        } else if (r > 0) {
+          const v1x = curr.x - prev.x
+          const v1y = curr.y - prev.y
+          const v2x = next.x - curr.x
+          const v2y = next.y - curr.y
+          const len1 = Math.sqrt(v1x * v1x + v1y * v1y)
+          const len2 = Math.sqrt(v2x * v2x + v2y * v2y)
+          const ux1 = v1x / len1
+          const uy1 = v1y / len1
+          const ux2 = v2x / len2
+          const uy2 = v2y / len2
+          const p1x = curr.x - ux1 * r
+          const p1y = curr.y - uy1 * r
+          const p2x = curr.x + ux2 * r
+          const p2y = curr.y + uy2 * r
+          ctx.lineTo(p1x, p1y)
+          ctx.arcTo(curr.x, curr.y, p2x, p2y, r)
         } else {
-          ctx.lineTo(p.x, p.y)
+          ctx.lineTo(curr.x, curr.y)
         }
       }
+      if (isClosed()) ctx.closePath()
       ctx.stroke()
     }
 
@@ -598,6 +660,11 @@ export default function LayoutCanvas({
       const label = p.label ?? String(i + 1)
       ctx.fillStyle = 'black'
       ctx.fillText(label, p.x + 6, p.y - 6)
+      if (p.radius) {
+        ctx.font = '10px sans-serif'
+        ctx.fillText(`r=${(p.radius / scale).toFixed(2)}m`, p.x + 6, p.y + 12)
+        ctx.font = '12px sans-serif'
+      }
     })
 
     ctx.fillStyle = 'green'
@@ -724,6 +791,7 @@ export default function LayoutCanvas({
             <MenuItem onClick={() => insertPointRelative(context.index, false)}>{t.insertBefore}</MenuItem>
             <MenuItem onClick={() => insertPointRelative(context.index, true)}>{t.insertAfter}</MenuItem>
             <MenuItem onClick={() => toggleSnapPoint(context.index)}>{t.snap}</MenuItem>
+            <MenuItem onClick={() => setCornerRadius(context.index)}>{t.roundCorner}</MenuItem>
           </>
         )}
         {context?.type === 'line' && (
