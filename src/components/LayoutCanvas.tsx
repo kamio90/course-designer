@@ -1,4 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
+import { useApp } from '../context/AppContext'
+import { translations } from '../i18n'
 
 interface ElementItem {
   id: string
@@ -31,16 +33,22 @@ export default function LayoutCanvas({
   elements,
   setElements,
 }: Props) {
+  const { lang } = useApp()
+  const t = translations[lang]
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dragEl, setDragEl] = useState<string | null>(null)
   const [menu, setMenu] = useState<{ x: number; y: number; index: number } | null>(null)
+  const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(null)
+  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
 
-  const getPos = (e: { clientX: number; clientY: number }) => {
+  const getPos = (e: { clientX: number; clientY: number; shiftKey: boolean }) => {
     const rect = canvasRef.current!.getBoundingClientRect()
-    let x = e.clientX - rect.left
-    let y = e.clientY - rect.top
-    if (snap) {
+    let x = (e.clientX - rect.left - offset.x) / zoom
+    let y = (e.clientY - rect.top - offset.y) / zoom
+    const snapActive = snap || e.shiftKey
+    if (snapActive) {
       x = Math.round(x / 50) * 50
       y = Math.round(y / 50) * 50
     }
@@ -48,6 +56,10 @@ export default function LayoutCanvas({
   }
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (e.button === 1) {
+      setPanStart({ x: e.clientX, y: e.clientY })
+      return
+    }
     const { x, y } = getPos(e)
     for (let i = points.length - 1; i >= 0; i--) {
       const p = points[i]
@@ -74,6 +86,14 @@ export default function LayoutCanvas({
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (panStart) {
+      setOffset({
+        x: offset.x + (e.clientX - panStart.x),
+        y: offset.y + (e.clientY - panStart.y),
+      })
+      setPanStart({ x: e.clientX, y: e.clientY })
+      return
+    }
     if (dragIndex !== null) {
       const { x, y } = getPos(e)
       setPoints(points.map((p, i) => (i === dragIndex ? { x, y } : p)))
@@ -86,6 +106,7 @@ export default function LayoutCanvas({
   const handlePointerUp = () => {
     setDragIndex(null)
     setDragEl(null)
+    setPanStart(null)
   }
 
   const handleContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -106,6 +127,13 @@ export default function LayoutCanvas({
     setMenu(null)
   }
 
+  const markAsStart = (idx: number) => {
+    const start = points[idx]
+    const rest = points.filter((_, i) => i !== idx)
+    setPoints([start, ...rest])
+    setMenu(null)
+  }
+
   const handleDrop = (e: React.DragEvent<HTMLCanvasElement>) => {
     const type = e.dataTransfer.getData('text/plain')
     if (!type) return
@@ -116,7 +144,9 @@ export default function LayoutCanvas({
   useEffect(() => {
     const canvas = canvasRef.current!
     const ctx = canvas.getContext('2d')!
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.setTransform(zoom, 0, 0, zoom, offset.x, offset.y)
 
     if (showGrid) {
       ctx.strokeStyle = '#eee'
@@ -169,7 +199,7 @@ export default function LayoutCanvas({
       ctx.fillText(String(idx + 1), 12, 0)
       ctx.restore()
     })
-  }, [points, showGrid, scale, elements])
+  }, [points, showGrid, scale, elements, offset, zoom])
 
   return (
     <>
@@ -182,13 +212,19 @@ export default function LayoutCanvas({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onContextMenu={handleContextMenu}
+        onWheel={(e) => {
+          setZoom((z) => Math.max(0.2, Math.min(3, z - e.deltaY * 0.001)))
+        }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
       />
       {menu && (
         <ul className="context-menu" style={{ top: menu.y, left: menu.x }}>
           <li>
-            <button onClick={() => removePoint(menu.index)}>Delete</button>
+            <button onClick={() => removePoint(menu.index)}>{t.delete}</button>
+          </li>
+          <li>
+            <button onClick={() => markAsStart(menu.index)}>{t.markStart}</button>
           </li>
         </ul>
       )}

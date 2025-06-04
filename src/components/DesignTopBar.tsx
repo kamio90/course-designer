@@ -76,7 +76,8 @@ export default function DesignTopBar({
         <DialogTitle>{t.help}</DialogTitle>
         <DialogContent>
           <Typography variant="body2">
-            Left click to add point, drag to move. Right click to delete. Use S to snap to grid and A to auto-straighten.
+            Left click to add point, drag to move. Hold Shift while dragging to snap to grid.
+            Right click a point for options. Use the middle mouse button to pan and the wheel to zoom.
           </Typography>
         </DialogContent>
         <DialogActions>
