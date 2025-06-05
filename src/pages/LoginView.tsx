@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
@@ -17,7 +17,7 @@ import {
   Select,
   MenuItem,
 } from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
+import { Visibility, VisibilityOff, ArrowBack } from '@mui/icons-material'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
@@ -35,7 +35,7 @@ interface FormInputs {
 }
 
 export default function LoginView() {
-  const { login, lang, switchLang } = useApp()
+  const { login, lang, switchLang, user } = useApp()
   const navigate = useNavigate()
   const t = translations[lang]
   const theme = useTheme()
@@ -51,11 +51,15 @@ export default function LoginView() {
       .required(t.passwordRequired),
   })
 
+  useEffect(() => {
+    if (user) navigate('/dashboard', { replace: true })
+  }, [user, navigate])
+
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<FormInputs>({
     resolver: yupResolver(schema),
     mode: 'onChange',
@@ -94,8 +98,12 @@ export default function LoginView() {
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             e.preventDefault()
-            reset()
-            setErrorMsg(null)
+            if (isDirty || errorMsg) {
+              reset()
+              setErrorMsg(null)
+            } else {
+              navigate(-1)
+            }
           }
         }}
         elevation={3}
@@ -103,6 +111,11 @@ export default function LoginView() {
         <Backdrop open={isSubmitting} sx={{ position: 'absolute', zIndex: 1 }}>
           <CircularProgress color="inherit" />
         </Backdrop>
+        <Box sx={{ position: 'absolute', top: 8, left: 8 }}>
+          <IconButton aria-label={t.back} onClick={() => navigate(-1)}>
+            <ArrowBack />
+          </IconButton>
+        </Box>
         <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
           <Select
             value={lang}
@@ -165,11 +178,16 @@ export default function LoginView() {
             }}
           />
           <Box sx={{ alignSelf: 'flex-end' }}>
-            <Button variant="text" size="small">
+            <Button variant="text" size="small" aria-label={t.forgotPassword}>
               {t.forgotPassword}
             </Button>
           </Box>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isSubmitting}
+            aria-label={t.login}
+          >
             {t.login}
           </Button>
           <Divider flexItem sx={{ width: '100%' }}>
@@ -181,6 +199,7 @@ export default function LoginView() {
             onAuth={() => {
               alert(t.googleMock)
             }}
+            ariaLabel={t.googleSignIn}
           >
             {t.googleSignIn}
           </GoogleAuthButton>
@@ -188,6 +207,7 @@ export default function LoginView() {
             onAuth={() => {
               alert(t.facebookMock)
             }}
+            ariaLabel={t.facebookSignIn}
           >
             {t.facebookSignIn}
           </FacebookAuthButton>
@@ -195,6 +215,7 @@ export default function LoginView() {
             variant="text"
             onClick={() => navigate('/register')}
             sx={{ mt: 1 }}
+            aria-label={t.registerLink}
           >
             {t.registerLink}
           </Button>

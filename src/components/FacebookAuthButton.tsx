@@ -4,14 +4,15 @@ import FacebookIcon from '@mui/icons-material/Facebook'
 
 interface Props {
   onAuth: () => void
+  ariaLabel: string
   children?: ReactNode
 }
 
-const FacebookAuthButton: FC<Props> = ({ onAuth, children }) => (
+const FacebookAuthButton: FC<Props> = ({ onAuth, ariaLabel, children }) => (
   <Button
     type="button"
     onClick={onAuth}
-    aria-label="facebook auth"
+    aria-label={ariaLabel}
     variant="contained"
     color="primary"
     startIcon={<FacebookIcon />}

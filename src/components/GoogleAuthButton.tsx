@@ -4,14 +4,15 @@ import GoogleIcon from '@mui/icons-material/Google'
 
 interface Props {
   onAuth: () => void
+  ariaLabel: string
   children?: ReactNode
 }
 
-const GoogleAuthButton: FC<Props> = ({ onAuth, children }) => (
+const GoogleAuthButton: FC<Props> = ({ onAuth, ariaLabel, children }) => (
   <Button
     type="button"
     onClick={onAuth}
-    aria-label="google auth"
+    aria-label={ariaLabel}
     variant="contained"
     color="error"
     startIcon={<GoogleIcon />}

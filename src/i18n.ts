@@ -123,6 +123,7 @@ export const translations = {
     clearAction: 'Clear area',
     save: 'Save',
     cancel: 'Cancel',
+    back: 'Back',
     yes: 'Yes',
     no: 'No',
     helpText:
@@ -252,6 +253,7 @@ export const translations = {
     clearAction: 'Wyczyść',
     save: 'Zapisz',
     cancel: 'Anuluj',
+    back: 'Wstecz',
     yes: 'Tak',
     no: 'Nie',
     helpText:
