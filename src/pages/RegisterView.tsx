@@ -15,12 +15,15 @@ import {
   Select,
   MenuItem,
   useTheme,
+  Link as MuiLink,
 } from '@mui/material'
 import { Visibility, VisibilityOff, ArrowBack } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import GoogleAuthButton from '../components/GoogleAuthButton'
+import FacebookAuthButton from '../components/FacebookAuthButton'
 import { useApp } from '../context/AppContext'
 import { register as apiRegister } from '../api/fakeApi'
 import { translations } from '../i18n'
@@ -36,6 +39,7 @@ interface FormInputs {
 }
 
 export default function RegisterView() {
+  const navigate = useNavigate()
   const { lang, switchLang } = useApp()
   const t = translations[lang]
   const theme = useTheme()
@@ -185,7 +189,26 @@ export default function RegisterView() {
           <FormControl error={!!errors.termsAccepted} component="fieldset">
             <FormControlLabel
               control={<Checkbox {...register('termsAccepted')} />}
-              label={t.tos}
+              label={
+                <Typography variant="body2">
+                  {t.tosPrefix}{' '}
+                  <MuiLink
+                    href="/tos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t.termsOfService}
+                  </MuiLink>{' '}
+                  {t.and}{' '}
+                  <MuiLink
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t.privacyPolicy}
+                  </MuiLink>
+                </Typography>
+              }
             />
             {errors.termsAccepted && (
               <FormHelperText>{errors.termsAccepted.message}</FormHelperText>
@@ -194,6 +217,11 @@ export default function RegisterView() {
           <Button type="submit" variant="contained" disabled={isSubmitting}>
             {t.register}
           </Button>
+          <Divider flexItem sx={{ width: '100%' }}>
+            <Typography variant="body2" color="text.secondary">
+              {t.orRegisterWith}
+            </Typography>
+          </Divider>
           <GoogleAuthButton
             onAuth={() => {
               alert(t.googleRegisterMock)
@@ -202,6 +230,22 @@ export default function RegisterView() {
           >
             {t.googleRegister}
           </GoogleAuthButton>
+          <FacebookAuthButton
+            onAuth={() => {
+              alert(t.facebookMock)
+            }}
+            ariaLabel={t.facebookRegister}
+          >
+            {t.facebookRegister}
+          </FacebookAuthButton>
+          <Button
+            variant="text"
+            onClick={() => navigate('/login')}
+            sx={{ mt: 1 }}
+            aria-label={t.backToLogin}
+          >
+            {t.backToLogin}
+          </Button>
         </Stack>
       </Paper>
     </Box>
