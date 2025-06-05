@@ -46,7 +46,7 @@ interface FormInputs {
 
 export default function RegisterView() {
   const navigate = useNavigate()
-  const { lang, switchLang } = useApp()
+  const { lang, switchLang, login } = useApp()
   const t = translations[lang]
   const theme = useTheme()
   const logo = theme.palette.mode === 'dark' ? darkLogo : lightLogo
@@ -93,13 +93,14 @@ export default function RegisterView() {
 
   const onSubmit = async (data: FormInputs) => {
     try {
-      await apiRegister({
+      const user = await apiRegister({
         email: data.email,
         username: data.username,
         password: data.password,
         acceptedTerms: data.termsAccepted,
       })
-      navigate('/login')
+      login(user)
+      navigate('/dashboard')
     } catch (err) {
       let msg = (err as Error).message
       if (msg === 'Invalid email') msg = t.emailInvalid
@@ -120,12 +121,14 @@ export default function RegisterView() {
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: 'background.default',
+        p: 2,
       }}
     >
       <Grow in>
         <Paper
-          sx={{ p: 4, width: '100%', maxWidth: 420, borderRadius: 2, position: 'relative' }}
+          sx={{ p: 4, width: '100%', maxWidth: 420, borderRadius: 2, position: 'relative', m: 2 }}
           component="form"
+          role="form"
           onSubmit={handleSubmit(onSubmit)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
@@ -166,6 +169,7 @@ export default function RegisterView() {
               severity="error"
               onClose={() => setErrorMsg(null)}
               role="alert"
+              aria-live="assertive"
               sx={{ width: '100%' }}
             >
               {errorMsg}
@@ -188,6 +192,7 @@ export default function RegisterView() {
             error={!!errors.username}
             helperText={errors.username?.message}
             FormHelperTextProps={{ 'aria-live': 'polite' }}
+            inputProps={{ 'aria-label': t.username, 'aria-required': true }}
             autoFocus
           />
           <TextField
@@ -197,6 +202,7 @@ export default function RegisterView() {
             error={!!errors.email}
             helperText={errors.email?.message}
             FormHelperTextProps={{ 'aria-live': 'polite' }}
+            inputProps={{ 'aria-label': t.email, 'aria-required': true }}
           />
           <TextField
             label={t.password}
@@ -205,6 +211,7 @@ export default function RegisterView() {
             error={!!errors.password}
             helperText={errors.password?.message}
             FormHelperTextProps={{ 'aria-live': 'polite' }}
+            inputProps={{ 'aria-label': t.password, 'aria-required': true }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -226,6 +233,7 @@ export default function RegisterView() {
             error={!!errors.confirmPassword}
             helperText={errors.confirmPassword?.message}
             FormHelperTextProps={{ 'aria-live': 'polite' }}
+            inputProps={{ 'aria-label': t.confirmPassword, 'aria-required': true }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -242,7 +250,7 @@ export default function RegisterView() {
           />
           <FormControl error={!!errors.termsAccepted} component="fieldset">
             <FormControlLabel
-              control={<Checkbox {...register('termsAccepted')} />}
+              control={<Checkbox {...register('termsAccepted')} inputProps={{ 'aria-required': true, 'aria-label': t.tosRequired }} />}
               label={
                 <Typography variant="body2">
                   {t.tosPrefix}{' '}
@@ -270,7 +278,12 @@ export default function RegisterView() {
               </FormHelperText>
             )}
           </FormControl>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isSubmitting}
+            aria-label={t.register}
+          >
             {t.register}
           </Button>
           <Divider flexItem sx={{ width: '100%' }}>

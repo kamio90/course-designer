@@ -25,7 +25,7 @@ const AppContext = createContext<AppContextProps | undefined>(undefined)
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    const raw = localStorage.getItem('user')
+    const raw = sessionStorage.getItem('user') || localStorage.getItem('user')
     return raw ? (JSON.parse(raw) as User) : null
   })
   const [theme, setTheme] = useState<'light' | 'dark'>(
@@ -59,11 +59,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const login = (data: User) => {
     setUser(data)
-    localStorage.setItem('user', JSON.stringify(data))
+    const serialized = JSON.stringify(data)
+    localStorage.setItem('user', serialized)
+    sessionStorage.setItem('user', serialized)
   }
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
+    sessionStorage.removeItem('user')
   }
   const toggleTheme = () => {
     setTheme((t) => {
