@@ -20,6 +20,8 @@ import {
   MenuItem,
   useTheme,
   Link as MuiLink,
+  Collapse,
+  Grow,
 } from '@mui/material'
 import { Visibility, VisibilityOff, ArrowBack } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
@@ -120,23 +122,24 @@ export default function RegisterView() {
         bgcolor: 'background.default',
       }}
     >
-      <Paper
-        sx={{ p: 4, width: '100%', maxWidth: 420, borderRadius: 2, position: 'relative' }}
-        component="form"
-        onSubmit={handleSubmit(onSubmit)}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            e.preventDefault()
-            if (isDirty || errorMsg) {
-              reset()
-              setErrorMsg(null)
-            } else {
-              navigate(-1)
+      <Grow in>
+        <Paper
+          sx={{ p: 4, width: '100%', maxWidth: 420, borderRadius: 2, position: 'relative' }}
+          component="form"
+          onSubmit={handleSubmit(onSubmit)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.preventDefault()
+              if (isDirty || errorMsg) {
+                reset()
+                setErrorMsg(null)
+              } else {
+                navigate(-1)
+              }
             }
-          }
-        }}
-        elevation={3}
-      >
+          }}
+          elevation={3}
+        >
         <Backdrop open={isSubmitting} sx={{ position: 'absolute', zIndex: 1 }}>
           <CircularProgress color="inherit" />
         </Backdrop>
@@ -158,7 +161,7 @@ export default function RegisterView() {
           </Select>
         </Box>
         <Box sx={{ width: '100%', minHeight: 56 }}>
-          {errorMsg && (
+          <Collapse in={!!errorMsg} unmountOnExit>
             <Alert
               severity="error"
               onClose={() => setErrorMsg(null)}
@@ -167,7 +170,7 @@ export default function RegisterView() {
             >
               {errorMsg}
             </Alert>
-          )}
+          </Collapse>
         </Box>
         <Stack spacing={2} alignItems="center">
           <Stack direction="row" spacing={1} alignItems="center">
@@ -301,8 +304,9 @@ export default function RegisterView() {
           >
             {t.backToLogin}
           </Button>
-        </Stack>
-      </Paper>
-    </Box>
+          </Stack>
+        </Paper>
+      </Grow>
+      </Box>
   )
 }
