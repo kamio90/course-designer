@@ -10,6 +10,8 @@ import {
   IconButton,
   InputAdornment,
   Divider,
+  Backdrop,
+  CircularProgress,
   useTheme,
 } from '@mui/material'
 import { Visibility, VisibilityOff } from '@mui/icons-material'
@@ -25,7 +27,7 @@ import FacebookAuthButton from '../components/FacebookAuthButton'
 import { translations } from '../i18n'
 
 interface FormInputs {
-  username: string
+  email: string
   password: string
 }
 
@@ -38,8 +40,11 @@ export default function LoginView() {
   const [showPwd, setShowPwd] = useState(false)
 
   const schema = yup.object({
-    username: yup.string().required(),
-    password: yup.string().min(6).required(),
+    email: yup.string().required(t.emailRequired).email(t.emailInvalid),
+    password: yup
+      .string()
+      .min(8, t.passwordMin)
+      .required(t.passwordRequired),
   })
 
   const {
@@ -48,15 +53,14 @@ export default function LoginView() {
     formState: { errors, isSubmitting },
   } = useForm<FormInputs>({
     resolver: yupResolver(schema),
-    mode: 'onBlur',
+    mode: 'onChange',
+    reValidateMode: 'onChange',
   })
 
   const onSubmit = async (data: FormInputs) => {
-    await new Promise((res) => setTimeout(res, 1000))
     try {
-      await apiLogin({ email: data.username, password: data.password })
-      alert('Logged in')
-      login({ email: data.username, username: data.username })
+      const user = await apiLogin({ email: data.email, password: data.password })
+      login(user)
       navigate('/dashboard')
     } catch (err) {
       alert((err as Error).message)
@@ -74,11 +78,14 @@ export default function LoginView() {
       }}
     >
       <Paper
-        sx={{ p: 4, width: '100%', maxWidth: 420, borderRadius: 2 }}
+        sx={{ p: 4, width: '100%', maxWidth: 420, borderRadius: 2, position: 'relative' }}
         component="form"
         onSubmit={handleSubmit(onSubmit)}
         elevation={3}
       >
+        <Backdrop open={isSubmitting} sx={{ position: 'absolute', zIndex: 1 }}>
+          <CircularProgress color="inherit" />
+        </Backdrop>
         <Stack spacing={2} alignItems="center">
           <Stack direction="row" spacing={1} alignItems="center">
             <img src={logo} alt={t.appName} width={40} height={40} />
@@ -90,10 +97,11 @@ export default function LoginView() {
             {t.loginTitle}
           </Typography>
           <TextField
-            label={t.username}
-            {...register('username')}
-            error={!!errors.username}
-            helperText={errors.username?.message}
+            label={t.email}
+            {...register('email')}
+            error={!!errors.email}
+            helperText={errors.email?.message}
+            FormHelperTextProps={{ 'aria-live': 'polite' }}
             autoFocus
           />
           <TextField
@@ -102,6 +110,7 @@ export default function LoginView() {
             {...register('password')}
             error={!!errors.password}
             helperText={errors.password?.message}
+            FormHelperTextProps={{ 'aria-live': 'polite' }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
