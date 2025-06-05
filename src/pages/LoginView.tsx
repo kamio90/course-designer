@@ -29,6 +29,7 @@ import GoogleAuthButton from '../components/GoogleAuthButton'
 import FacebookAuthButton from '../components/FacebookAuthButton'
 import { translations } from '../i18n'
 import pkg from '../../package.json'
+import { logLoginAttempt } from '../utils/analytics'
 
 interface FormInputs {
   email: string
@@ -72,6 +73,7 @@ export default function LoginView() {
     try {
       const user = await apiLogin({ email: data.email, password: data.password })
       login(user)
+      logLoginAttempt(data.email, true)
       navigate('/dashboard')
     } catch (err) {
       let msg = (err as Error).message
@@ -80,7 +82,15 @@ export default function LoginView() {
       else if (msg === 'Password too short') msg = t.passwordMin
       else msg = t.loginFailed
       setErrorMsg(msg)
+      logLoginAttempt(data.email, false)
     }
+  }
+
+  const handleDemo = () => {
+    const demoUser = { email: 'demo@example.com', username: 'demo' }
+    login(demoUser)
+    logLoginAttempt(demoUser.email, true)
+    navigate('/dashboard')
   }
 
   return (
@@ -130,16 +140,18 @@ export default function LoginView() {
             <MenuItem value="pl">PL</MenuItem>
           </Select>
         </Box>
-        {errorMsg && (
-          <Alert
-            severity="error"
-            onClose={() => setErrorMsg(null)}
-            role="alert"
-            sx={{ width: '100%' }}
-          >
-            {errorMsg}
-          </Alert>
-        )}
+        <Box sx={{ width: '100%', minHeight: 56 }}>
+          {errorMsg && (
+            <Alert
+              severity="error"
+              onClose={() => setErrorMsg(null)}
+              role="alert"
+              sx={{ width: '100%' }}
+            >
+              {errorMsg}
+            </Alert>
+          )}
+        </Box>
         <Stack spacing={2} alignItems="center">
           <Stack direction="row" spacing={1} alignItems="center">
             <img src={logo} alt={t.appName} width={40} height={40} />
@@ -213,6 +225,16 @@ export default function LoginView() {
           >
             {t.facebookSignIn}
           </FacebookAuthButton>
+          <Button
+            type="button"
+            variant="outlined"
+            onClick={handleDemo}
+            sx={{ mt: 1 }}
+            aria-label={t.demoAccount}
+            fullWidth
+          >
+            {t.demoAccount}
+          </Button>
           <Button
             variant="text"
             onClick={() => navigate('/register')}
