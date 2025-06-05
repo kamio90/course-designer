@@ -13,6 +13,9 @@ import {
   Backdrop,
   CircularProgress,
   useTheme,
+  Alert,
+  Select,
+  MenuItem,
 } from '@mui/material'
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { useForm } from 'react-hook-form'
@@ -32,12 +35,13 @@ interface FormInputs {
 }
 
 export default function LoginView() {
-  const { login, lang } = useApp()
+  const { login, lang, switchLang } = useApp()
   const navigate = useNavigate()
   const t = translations[lang]
   const theme = useTheme()
   const logo = theme.palette.mode === 'dark' ? darkLogo : lightLogo
   const [showPwd, setShowPwd] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const schema = yup.object({
     email: yup.string().required(t.emailRequired).email(t.emailInvalid),
@@ -50,6 +54,7 @@ export default function LoginView() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<FormInputs>({
     resolver: yupResolver(schema),
@@ -63,7 +68,12 @@ export default function LoginView() {
       login(user)
       navigate('/dashboard')
     } catch (err) {
-      alert((err as Error).message)
+      let msg = (err as Error).message
+      if (msg === 'Invalid credentials') msg = t.invalidCredentials
+      else if (msg === 'Invalid email') msg = t.emailInvalid
+      else if (msg === 'Password too short') msg = t.passwordMin
+      else msg = t.loginFailed
+      setErrorMsg(msg)
     }
   }
 
@@ -81,11 +91,40 @@ export default function LoginView() {
         sx={{ p: 4, width: '100%', maxWidth: 420, borderRadius: 2, position: 'relative' }}
         component="form"
         onSubmit={handleSubmit(onSubmit)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            reset()
+            setErrorMsg(null)
+          }
+        }}
         elevation={3}
       >
         <Backdrop open={isSubmitting} sx={{ position: 'absolute', zIndex: 1 }}>
           <CircularProgress color="inherit" />
         </Backdrop>
+        <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+          <Select
+            value={lang}
+            onChange={(e) => switchLang(e.target.value as 'en' | 'pl')}
+            size="small"
+            variant="standard"
+            inputProps={{ 'aria-label': t.language }}
+          >
+            <MenuItem value="en">EN</MenuItem>
+            <MenuItem value="pl">PL</MenuItem>
+          </Select>
+        </Box>
+        {errorMsg && (
+          <Alert
+            severity="error"
+            onClose={() => setErrorMsg(null)}
+            role="alert"
+            sx={{ width: '100%' }}
+          >
+            {errorMsg}
+          </Alert>
+        )}
         <Stack spacing={2} alignItems="center">
           <Stack direction="row" spacing={1} alignItems="center">
             <img src={logo} alt={t.appName} width={40} height={40} />
