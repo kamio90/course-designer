@@ -68,10 +68,25 @@ export async function login(payload: LoginPayload): Promise<User> {
 }
 
 export async function register(payload: RegisterPayload): Promise<User> {
-  if (!payload.email || !payload.username || payload.password.length < 8 || !payload.acceptedTerms) {
-    throw new Error('Invalid registration data')
+  await new Promise((r) => setTimeout(r, API_DELAY))
+
+  if (!payload.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payload.email)) {
+    throw new Error('Invalid email')
   }
-  return mockResponse({ email: payload.email, username: payload.username })
+  if (!payload.username || payload.username.length < 3) {
+    throw new Error('Invalid username')
+  }
+  if (payload.password.length < 8) {
+    throw new Error('Password too short')
+  }
+  if (!payload.acceptedTerms) {
+    throw new Error('Terms not accepted')
+  }
+  if (payload.email === 'exists@example.com') {
+    throw new Error('User already exists')
+  }
+
+  return { email: payload.email, username: payload.username }
 }
 
 export async function fetchPublicProjects(): Promise<Project[]> {

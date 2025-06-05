@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { login } from './fakeApi'
+import { login, register } from './fakeApi'
 
 vi.useFakeTimers()
 
@@ -26,5 +26,32 @@ describe('fakeApi.login', () => {
     const promise = login({ email: 'error@example.com', password: 'password123' })
     vi.runAllTimers()
     await expect(promise).rejects.toThrow('Invalid credentials')
+  })
+})
+
+describe('fakeApi.register', () => {
+  it('resolves with user data for valid input', async () => {
+    const promise = register({
+      email: 'new@example.com',
+      username: 'newuser',
+      password: 'password123!',
+      acceptedTerms: true,
+    })
+    vi.runAllTimers()
+    await expect(promise).resolves.toEqual({
+      email: 'new@example.com',
+      username: 'newuser',
+    })
+  })
+
+  it('rejects when user already exists', async () => {
+    const promise = register({
+      email: 'exists@example.com',
+      username: 'newuser',
+      password: 'password123!',
+      acceptedTerms: true,
+    })
+    vi.runAllTimers()
+    await expect(promise).rejects.toThrow('User already exists')
   })
 })

@@ -12,6 +12,8 @@ import {
   FormHelperText,
   Backdrop,
   CircularProgress,
+  Divider,
+  Alert,
   IconButton,
   InputAdornment,
   Select,
@@ -76,7 +78,8 @@ export default function RegisterView() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    reset,
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<FormInputs>({
     resolver: yupResolver(schema),
     mode: 'onChange',
@@ -84,8 +87,9 @@ export default function RegisterView() {
     defaultValues: { termsAccepted: false, confirmPassword: '' } as FormInputs,
   })
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
   const onSubmit = async (data: FormInputs) => {
-    await new Promise((res) => setTimeout(res, 1000))
     try {
       await apiRegister({
         email: data.email,
@@ -93,9 +97,16 @@ export default function RegisterView() {
         password: data.password,
         acceptedTerms: data.termsAccepted,
       })
-      alert('Registered')
+      navigate('/login')
     } catch (err) {
-      alert((err as Error).message)
+      let msg = (err as Error).message
+      if (msg === 'Invalid email') msg = t.emailInvalid
+      else if (msg === 'Invalid username') msg = t.usernameMin
+      else if (msg === 'Password too short') msg = t.passwordMin
+      else if (msg === 'Terms not accepted') msg = t.tosRequired
+      else if (msg === 'User already exists') msg = t.userExists
+      else msg = t.registerFailed
+      setErrorMsg(msg)
     }
   }
 
@@ -113,13 +124,24 @@ export default function RegisterView() {
         sx={{ p: 4, width: '100%', maxWidth: 420, borderRadius: 2, position: 'relative' }}
         component="form"
         onSubmit={handleSubmit(onSubmit)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            if (isDirty || errorMsg) {
+              reset()
+              setErrorMsg(null)
+            } else {
+              navigate(-1)
+            }
+          }
+        }}
         elevation={3}
       >
         <Backdrop open={isSubmitting} sx={{ position: 'absolute', zIndex: 1 }}>
           <CircularProgress color="inherit" />
         </Backdrop>
         <Box sx={{ position: 'absolute', top: 8, left: 8 }}>
-          <IconButton aria-label={t.back} onClick={() => window.history.back()}>
+          <IconButton aria-label={t.back} onClick={() => navigate(-1)}>
             <ArrowBack />
           </IconButton>
         </Box>
@@ -134,6 +156,18 @@ export default function RegisterView() {
             <MenuItem value="en">EN</MenuItem>
             <MenuItem value="pl">PL</MenuItem>
           </Select>
+        </Box>
+        <Box sx={{ width: '100%', minHeight: 56 }}>
+          {errorMsg && (
+            <Alert
+              severity="error"
+              onClose={() => setErrorMsg(null)}
+              role="alert"
+              sx={{ width: '100%' }}
+            >
+              {errorMsg}
+            </Alert>
+          )}
         </Box>
         <Stack spacing={2} alignItems="center">
           <Stack direction="row" spacing={1} alignItems="center">
