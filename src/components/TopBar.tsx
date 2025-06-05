@@ -20,7 +20,6 @@ export default function TopBar() {
   const t = translations[lang]
   const [collapsed, setCollapsed] = useState(false)
   const [prefsOpen, setPrefsOpen] = useState(false)
-  const [prefsOpen, setPrefsOpen] = useState(false)
 
   if (collapsed) {
     return (

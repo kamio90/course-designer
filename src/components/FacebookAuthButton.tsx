@@ -19,7 +19,7 @@ const FacebookAuthButton: FC<Props> = ({ onAuth, ariaLabel, children }) => (
     sx={{ textTransform: 'none' }}
     fullWidth
   >
-    {children || 'Continue with Facebook (mock)'}
+    {children}
   </Button>
 )
 

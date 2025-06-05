@@ -28,6 +28,7 @@ import { useApp } from '../context/AppContext'
 import GoogleAuthButton from '../components/GoogleAuthButton'
 import FacebookAuthButton from '../components/FacebookAuthButton'
 import { translations } from '../i18n'
+import pkg from '../../package.json'
 
 interface FormInputs {
   email: string
@@ -40,6 +41,7 @@ export default function LoginView() {
   const t = translations[lang]
   const theme = useTheme()
   const logo = theme.palette.mode === 'dark' ? darkLogo : lightLogo
+  const version = pkg.version
   const [showPwd, setShowPwd] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -219,6 +221,9 @@ export default function LoginView() {
           >
             {t.registerLink}
           </Button>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+            {t.appVersion} {version}
+          </Typography>
         </Stack>
       </Paper>
     </Box>

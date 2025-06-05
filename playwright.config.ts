@@ -4,9 +4,11 @@ export default defineConfig({
   testDir: './tests',
   reporter: [['list'], ['html', { open: 'never' }]],
   use: { headless: true },
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] } }
-  ],
+  webServer: {
+    command: 'npm run dev',
+    port: 5173,
+    reuseExistingServer: true,
+  },
+  // Limit to Chromium to avoid large browser downloads in CI
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 });

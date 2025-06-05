@@ -19,7 +19,7 @@ const GoogleAuthButton: FC<Props> = ({ onAuth, ariaLabel, children }) => (
     sx={{ mt: 2, textTransform: 'none' }}
     fullWidth
   >
-    {children || 'Continue with Google (mock)'}
+    {children}
   </Button>
 )
 
