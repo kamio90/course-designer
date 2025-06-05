@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  Container,
+  Box,
   Paper,
   Stack,
   Typography,
@@ -12,8 +12,11 @@ import {
   FormHelperText,
   IconButton,
   InputAdornment,
+  Select,
+  MenuItem,
+  useTheme,
 } from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
+import { Visibility, VisibilityOff, ArrowBack } from '@mui/icons-material'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
@@ -21,23 +24,33 @@ import GoogleAuthButton from '../components/GoogleAuthButton'
 import { useApp } from '../context/AppContext'
 import { register as apiRegister } from '../api/fakeApi'
 import { translations } from '../i18n'
+import lightLogo from '../assets/logo-light.svg'
+import darkLogo from '../assets/logo-dark.svg'
 
 interface FormInputs {
   email: string
   username: string
   password: string
+  confirmPassword: string
   termsAccepted: boolean
 }
 
 export default function RegisterView() {
-  const { lang } = useApp()
+  const { lang, switchLang } = useApp()
   const t = translations[lang]
+  const theme = useTheme()
+  const logo = theme.palette.mode === 'dark' ? darkLogo : lightLogo
   const [showPwd, setShowPwd] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const schema = yup.object({
-    email: yup.string().email().required(),
+    email: yup.string().email(t.emailInvalid).required(t.emailRequired),
     username: yup.string().required(),
-    password: yup.string().min(6).required(),
+    password: yup.string().min(8, t.passwordMin).required(t.passwordRequired),
+    confirmPassword: yup
+      .string()
+      .oneOf([yup.ref('password')], t.passwordMismatch)
+      .required(t.passwordRequired),
     termsAccepted: yup
       .boolean()
       .oneOf([true], t.tos)
@@ -50,8 +63,9 @@ export default function RegisterView() {
     formState: { errors, isSubmitting },
   } = useForm<FormInputs>({
     resolver: yupResolver(schema),
-    mode: 'onBlur',
-    defaultValues: { termsAccepted: false } as FormInputs,
+    mode: 'onChange',
+    reValidateMode: 'onChange',
+    defaultValues: { termsAccepted: false, confirmPassword: '' } as FormInputs,
   })
 
   const onSubmit = async (data: FormInputs) => {
@@ -70,25 +84,61 @@ export default function RegisterView() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Paper sx={{ p: 4 }} component="form" onSubmit={handleSubmit(onSubmit)}>
-        <Stack spacing={2}>
-          <Typography variant="h4" component="h1" textAlign="center">
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+      }}
+    >
+      <Paper
+        sx={{ p: 4, width: '100%', maxWidth: 420, borderRadius: 2, position: 'relative' }}
+        component="form"
+        onSubmit={handleSubmit(onSubmit)}
+        elevation={3}
+      >
+        <Box sx={{ position: 'absolute', top: 8, left: 8 }}>
+          <IconButton aria-label={t.back} onClick={() => window.history.back()}>
+            <ArrowBack />
+          </IconButton>
+        </Box>
+        <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+          <Select
+            value={lang}
+            onChange={(e) => switchLang(e.target.value as 'en' | 'pl')}
+            size="small"
+            variant="standard"
+            inputProps={{ 'aria-label': t.language }}
+          >
+            <MenuItem value="en">EN</MenuItem>
+            <MenuItem value="pl">PL</MenuItem>
+          </Select>
+        </Box>
+        <Stack spacing={2} alignItems="center">
+          <Stack direction="row" spacing={1} alignItems="center">
+            <img src={logo} alt={t.appName} width={40} height={40} />
+            <Typography variant="h6" component="span">
+              {t.appName}
+            </Typography>
+          </Stack>
+          <Typography variant="h5" component="h1">
             {t.registerTitle}
           </Typography>
+          <TextField
+            label={t.username}
+            {...register('username')}
+            error={!!errors.username}
+            helperText={errors.username?.message}
+            autoFocus
+          />
           <TextField
             label={t.email}
             type="email"
             {...register('email')}
             error={!!errors.email}
             helperText={errors.email?.message}
-            autoFocus
-          />
-          <TextField
-            label={t.username}
-            {...register('username')}
-            error={!!errors.username}
-            helperText={errors.username?.message}
           />
           <TextField
             label={t.password}
@@ -96,6 +146,7 @@ export default function RegisterView() {
             {...register('password')}
             error={!!errors.password}
             helperText={errors.password?.message}
+            FormHelperTextProps={{ 'aria-live': 'polite' }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -105,6 +156,27 @@ export default function RegisterView() {
                     edge="end"
                   >
                     {showPwd ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <TextField
+            label={t.confirmPassword}
+            type={showConfirm ? 'text' : 'password'}
+            {...register('confirmPassword')}
+            error={!!errors.confirmPassword}
+            helperText={errors.confirmPassword?.message}
+            FormHelperTextProps={{ 'aria-live': 'polite' }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowConfirm((s) => !s)}
+                    aria-label={showConfirm ? t.hidePassword : t.showPassword}
+                    edge="end"
+                  >
+                    {showConfirm ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
               ),
@@ -126,11 +198,12 @@ export default function RegisterView() {
             onAuth={() => {
               alert(t.googleRegisterMock)
             }}
+            ariaLabel={t.googleRegister}
           >
             {t.googleRegister}
           </GoogleAuthButton>
         </Stack>
       </Paper>
-    </Container>
+    </Box>
   )
 }
