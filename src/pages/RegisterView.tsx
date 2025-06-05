@@ -46,7 +46,7 @@ interface FormInputs {
 
 export default function RegisterView() {
   const navigate = useNavigate()
-  const { lang, switchLang, login } = useApp()
+  const { lang, switchLang, login, autoLoginAfterRegister } = useApp()
   const t = translations[lang]
   const theme = useTheme()
   const logo = theme.palette.mode === 'dark' ? darkLogo : lightLogo
@@ -90,6 +90,7 @@ export default function RegisterView() {
   })
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const onSubmit = async (data: FormInputs) => {
     try {
@@ -99,8 +100,14 @@ export default function RegisterView() {
         password: data.password,
         acceptedTerms: data.termsAccepted,
       })
-      login(user)
-      navigate('/dashboard')
+      if (autoLoginAfterRegister) {
+        login(user)
+        navigate('/dashboard')
+      } else {
+        reset()
+        setErrorMsg(null)
+        setSuccess(true)
+      }
     } catch (err) {
       let msg = (err as Error).message
       if (msg === 'Invalid email') msg = t.emailInvalid
@@ -173,6 +180,20 @@ export default function RegisterView() {
               sx={{ width: '100%' }}
             >
               {errorMsg}
+            </Alert>
+          </Collapse>
+          <Collapse in={success} unmountOnExit>
+            <Alert
+              severity="success"
+              role="alert"
+              aria-live="assertive"
+              action={
+                <Button color="inherit" size="small" onClick={() => navigate('/login')}>
+                  {t.login}
+                </Button>
+              }
+            >
+              {t.registerSuccess}
             </Alert>
           </Collapse>
         </Box>

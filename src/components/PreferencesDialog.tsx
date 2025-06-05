@@ -27,6 +27,8 @@ export default function PreferencesDialog({ open, onClose }: Props) {
     toggleContrast,
     advancedGestures,
     toggleGestures,
+    autoLoginAfterRegister,
+    toggleAutoLoginAfterRegister,
     shortcuts,
     setShortcut,
   } = useApp()
@@ -49,6 +51,10 @@ export default function PreferencesDialog({ open, onClose }: Props) {
         <FormControlLabel
           control={<Switch checked={advancedGestures} onChange={toggleGestures} />}
           label={t.advancedGestures}
+        />
+        <FormControlLabel
+          control={<Switch checked={autoLoginAfterRegister} onChange={toggleAutoLoginAfterRegister} />}
+          label={t.autoLoginAfterRegister}
         />
         <List dense>
           {Object.entries(local).map(([action, key]) => (
