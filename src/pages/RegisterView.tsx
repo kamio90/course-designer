@@ -10,6 +10,8 @@ import {
   FormControl,
   FormControlLabel,
   FormHelperText,
+  Backdrop,
+  CircularProgress,
   IconButton,
   InputAdornment,
   Select,
@@ -47,17 +49,27 @@ export default function RegisterView() {
   const [showPwd, setShowPwd] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
+  const USERNAME_MIN = 3
+  const PASSWORD_MIN = 8
+
   const schema = yup.object({
     email: yup.string().email(t.emailInvalid).required(t.emailRequired),
-    username: yup.string().required(),
-    password: yup.string().min(8, t.passwordMin).required(t.passwordRequired),
+    username: yup
+      .string()
+      .min(USERNAME_MIN, t.usernameMin)
+      .required(t.usernameRequired),
+    password: yup
+      .string()
+      .min(PASSWORD_MIN, t.passwordMin)
+      .matches(/(?=.*\d)(?=.*[^A-Za-z0-9])/, t.passwordComplex)
+      .required(t.passwordRequired),
     confirmPassword: yup
       .string()
       .oneOf([yup.ref('password')], t.passwordMismatch)
       .required(t.passwordRequired),
     termsAccepted: yup
       .boolean()
-      .oneOf([true], t.tos)
+      .oneOf([true], t.tosRequired)
       .required(),
   })
 
@@ -103,6 +115,9 @@ export default function RegisterView() {
         onSubmit={handleSubmit(onSubmit)}
         elevation={3}
       >
+        <Backdrop open={isSubmitting} sx={{ position: 'absolute', zIndex: 1 }}>
+          <CircularProgress color="inherit" />
+        </Backdrop>
         <Box sx={{ position: 'absolute', top: 8, left: 8 }}>
           <IconButton aria-label={t.back} onClick={() => window.history.back()}>
             <ArrowBack />
@@ -135,6 +150,7 @@ export default function RegisterView() {
             {...register('username')}
             error={!!errors.username}
             helperText={errors.username?.message}
+            FormHelperTextProps={{ 'aria-live': 'polite' }}
             autoFocus
           />
           <TextField
@@ -143,6 +159,7 @@ export default function RegisterView() {
             {...register('email')}
             error={!!errors.email}
             helperText={errors.email?.message}
+            FormHelperTextProps={{ 'aria-live': 'polite' }}
           />
           <TextField
             label={t.password}
@@ -211,7 +228,9 @@ export default function RegisterView() {
               }
             />
             {errors.termsAccepted && (
-              <FormHelperText>{errors.termsAccepted.message}</FormHelperText>
+              <FormHelperText aria-live="polite">
+                {errors.termsAccepted.message}
+              </FormHelperText>
             )}
           </FormControl>
           <Button type="submit" variant="contained" disabled={isSubmitting}>
@@ -227,6 +246,7 @@ export default function RegisterView() {
               alert(t.googleRegisterMock)
             }}
             ariaLabel={t.googleRegister}
+            disabled={isSubmitting}
           >
             {t.googleRegister}
           </GoogleAuthButton>
@@ -235,6 +255,7 @@ export default function RegisterView() {
               alert(t.facebookMock)
             }}
             ariaLabel={t.facebookRegister}
+            disabled={isSubmitting}
           >
             {t.facebookRegister}
           </FacebookAuthButton>
