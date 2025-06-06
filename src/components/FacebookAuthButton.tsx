@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from 'react'
 import { Button } from '@mui/material'
-import GoogleIcon from '@mui/icons-material/Google'
+import FacebookIcon from '@mui/icons-material/Facebook'
 
 interface Props {
   onAuth: () => void
@@ -8,19 +8,19 @@ interface Props {
   children?: ReactNode
 }
 
-const GoogleAuthButton: FC<Props> = ({ onAuth, ariaLabel, children }) => (
+const FacebookAuthButton: FC<Props> = ({ onAuth, ariaLabel, children }) => (
   <Button
     type="button"
     onClick={onAuth}
     aria-label={ariaLabel}
     variant="contained"
-    color="error"
-    startIcon={<GoogleIcon />}
-    sx={{ mt: 2, textTransform: 'none' }}
+    color="primary"
+    startIcon={<FacebookIcon />}
+    sx={{ textTransform: 'none' }}
     fullWidth
   >
     {children}
   </Button>
 )
 
-export default GoogleAuthButton
+export default FacebookAuthButton

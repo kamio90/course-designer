@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo } from 'react'
+import { ThemeProvider, createTheme, CssBaseline } from '@mui/material'
+import { orange, yellow, grey } from '@mui/material/colors'
 import type { ReactNode } from 'react'
 import type { User, Project } from '../api/fakeApi'
 
@@ -12,6 +14,8 @@ interface AppContextProps {
   toggleContrast: () => void
   advancedGestures: boolean
   toggleGestures: () => void
+  autoLoginAfterRegister: boolean
+  toggleAutoLoginAfterRegister: () => void
   lang: 'en' | 'pl'
   switchLang: (lang: 'en' | 'pl') => void
   shortcuts: Record<string, string>
@@ -25,7 +29,7 @@ const AppContext = createContext<AppContextProps | undefined>(undefined)
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    const raw = localStorage.getItem('user')
+    const raw = sessionStorage.getItem('user') || localStorage.getItem('user')
     return raw ? (JSON.parse(raw) as User) : null
   })
   const [theme, setTheme] = useState<'light' | 'dark'>(
@@ -40,6 +44,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [advancedGestures, setAdvancedGestures] = useState<boolean>(() => {
     return localStorage.getItem('advancedGestures') !== 'false'
   })
+  const [autoLoginAfterRegister, setAutoLoginAfterRegister] = useState<boolean>(
+    () => localStorage.getItem('autoLoginAfterRegister') !== 'false',
+  )
   const [shortcuts, setShortcuts] = useState<Record<string, string>>(() => {
     const raw = localStorage.getItem('shortcuts')
     return (
@@ -59,11 +66,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const login = (data: User) => {
     setUser(data)
-    localStorage.setItem('user', JSON.stringify(data))
+    const serialized = JSON.stringify(data)
+    localStorage.setItem('user', serialized)
+    sessionStorage.setItem('user', serialized)
   }
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
+    sessionStorage.removeItem('user')
   }
   const toggleTheme = () => {
     setTheme((t) => {
@@ -83,6 +93,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAdvancedGestures((g) => {
       const next = !g
       localStorage.setItem('advancedGestures', String(next))
+      return next
+    })
+  }
+  const toggleAutoLoginAfterRegister = () => {
+    setAutoLoginAfterRegister((v) => {
+      const next = !v
+      localStorage.setItem('autoLoginAfterRegister', String(next))
       return next
     })
   }
@@ -121,34 +138,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const muiTheme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: theme,
+          ...(highContrast && {
+            primary: { main: orange[500] },
+            secondary: { main: yellow[700] },
+            background: { default: grey[900], paper: grey[800] },
+            text: { primary: '#fff' },
+          }),
+        },
+      }),
+    [theme, highContrast],
+  )
+
   useEffect(() => {
     document.body.dataset.theme = theme
     document.body.dataset.hc = highContrast ? 'true' : 'false'
   }, [theme, highContrast])
 
   return (
-    <AppContext.Provider
-      value={{
-        user,
-        login,
-        logout,
-        theme,
-        toggleTheme,
-        highContrast,
-      toggleContrast,
-      advancedGestures,
-      toggleGestures,
-      lang,
-        switchLang,
-        shortcuts,
-        setShortcut,
-        projects,
-        addProject,
-        deleteProject,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
+    <ThemeProvider theme={muiTheme}>
+      <CssBaseline />
+      <AppContext.Provider
+        value={{
+          user,
+          login,
+          logout,
+          theme,
+          toggleTheme,
+          highContrast,
+          toggleContrast,
+          advancedGestures,
+          toggleGestures,
+          autoLoginAfterRegister,
+          toggleAutoLoginAfterRegister,
+          lang,
+          switchLang,
+          shortcuts,
+          setShortcut,
+          projects,
+          addProject,
+          deleteProject,
+        }}
+      >
+        {children}
+      </AppContext.Provider>
+    </ThemeProvider>
   )
 }
 
